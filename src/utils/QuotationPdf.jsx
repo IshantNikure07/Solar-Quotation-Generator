@@ -2,21 +2,70 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { numberToWordsIndian } from './numberToWords';
 import defaultSignature from '../assets/signature.png';
+import defaultLogo from '../assets/logo-uni.png';
 
-// Define styles matching reference quotation image using standard built-in Helvetica font
-const primaryRed = '#800000'; // Dark Red / Maroon matching reference
-const lightPink = '#fce8e6';  // Light pink highlight matching subtotal & total boxes
+// 6 Available Professional PDF Color Themes
+export const PDF_THEMES = {
+  red: {
+    id: 'red',
+    name: 'Red / Maroon',
+    primary: '#800000',
+    highlight: '#fce8e6',
+  },
+  darkBlue: {
+    id: 'darkBlue',
+    name: 'Dark Blue',
+    primary: '#1e3a8a',
+    highlight: '#dbeafe',
+  },
+  skyBlue: {
+    id: 'skyBlue',
+    name: 'Sky Blue',
+    primary: '#0284c7',
+    highlight: '#e0f2fe',
+  },
+  brown: {
+    id: 'brown',
+    name: 'Classic Brown',
+    primary: '#78350f',
+    highlight: '#fef3c7',
+  },
+  emerald: {
+    id: 'emerald',
+    name: 'Emerald Green',
+    primary: '#065f46',
+    highlight: '#d1fae5',
+  },
+  slate: {
+    id: 'slate',
+    name: 'Dark Slate Gray',
+    primary: '#1e293b',
+    highlight: '#f1f5f9',
+  },
+};
+
 const borderColor = '#cccccc';
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 25,
-    paddingBottom: 25,
+    paddingTop: 22,
+    paddingBottom: 22,
     paddingHorizontal: 28,
     fontSize: 9,
     fontFamily: 'Helvetica',
     color: '#111111',
     backgroundColor: '#ffffff',
+  },
+
+  // Top Page Heading
+  topHeadingTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginBottom: 6,
+    textTransform: 'uppercase',
   },
 
   // 1. Header Section
@@ -31,7 +80,6 @@ const styles = StyleSheet.create({
   companyTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: primaryRed,
     fontFamily: 'Helvetica-Bold',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -44,7 +92,6 @@ const styles = StyleSheet.create({
   specialistTag: {
     fontSize: 10.5,
     fontWeight: 'bold',
-    color: primaryRed,
     fontFamily: 'Helvetica-Bold',
     textDecoration: 'underline',
     marginBottom: 4,
@@ -61,31 +108,28 @@ const styles = StyleSheet.create({
   headerRight: {
     width: '23%',
     alignItems: 'flex-end',
+    justifyContent: 'flex-start',
   },
-  safetyTag: {
-    fontSize: 8.5,
-    fontStyle: 'italic',
-    color: '#666666',
-    marginTop: 2,
+  topRightLogo: {
+    width: 55,
+    height: 55,
+    objectFit: 'contain',
   },
 
   // Double horizontal rule
   thinRedLine: {
     borderBottomWidth: 1,
-    borderBottomColor: primaryRed,
     marginTop: 4,
     marginBottom: 2,
   },
   thickRedLine: {
     borderBottomWidth: 3,
-    borderBottomColor: primaryRed,
     marginBottom: 8,
   },
 
-  // 2. Red Quotation Meta Banner
+  // 2. Quotation Meta Banner
   bannerContainer: {
     flexDirection: 'row',
-    backgroundColor: primaryRed,
     paddingVertical: 5,
     paddingHorizontal: 10,
     justifyContent: 'space-between',
@@ -119,7 +163,6 @@ const styles = StyleSheet.create({
   boxHeading: {
     fontSize: 9.5,
     fontWeight: 'bold',
-    color: primaryRed,
     fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
@@ -134,7 +177,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
 
-  // 4. ITEMS Table Section (With 3 separate columns: ITEM NAME | KW | QTY)
+  // 4. ITEMS Table Section (Columns: ITEMS | KW | QTY | RATE | TAX | AMOUNT)
   tableContainer: {
     borderWidth: 1,
     borderColor: borderColor,
@@ -143,13 +186,12 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: primaryRed,
     paddingVertical: 5,
     paddingHorizontal: 4,
     alignItems: 'center',
   },
   thItems: {
-    width: '35%',
+    width: '43%',
     color: '#ffffff',
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -157,7 +199,7 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
   },
   thKw: {
-    width: '10%',
+    width: '12%',
     color: '#ffffff',
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -165,14 +207,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   thItemQty: {
-    width: '10%',
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 9,
-    textAlign: 'center',
-  },
-  thPkgQty: {
     width: '10%',
     color: '#ffffff',
     fontWeight: 'bold',
@@ -214,7 +248,7 @@ const styles = StyleSheet.create({
     borderBottomColor: borderColor,
   },
   leftItemsBlock: {
-    width: '55%',
+    width: '65%', // 43 + 12 + 10 = 65%
     borderRightWidth: 1,
     borderRightColor: borderColor,
   },
@@ -227,7 +261,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f3f4f6',
   },
   colNameText: {
-    width: '63.6%', // 35 / 55
+    width: '66.15%', // 43 / 65
     fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -235,7 +269,7 @@ const styles = StyleSheet.create({
     paddingLeft: 2,
   },
   colKwText: {
-    width: '18.2%', // 10 / 55
+    width: '18.46%', // 12 / 65
     fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -243,7 +277,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   colQtyText: {
-    width: '18.2%', // 10 / 55
+    width: '15.39%', // 10 / 65
     fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -251,17 +285,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Right Merged Columns
-  tdPkgQtyCol: {
-    width: '10%',
-    paddingTop: 40,
-    textAlign: 'center',
-    fontSize: 8.5,
-    fontWeight: 'bold',
-    fontFamily: 'Helvetica-Bold',
-    borderRightWidth: 1,
-    borderRightColor: borderColor,
-  },
+  // Right Columns
   tdRateCol: {
     width: '12%',
     paddingTop: 40,
@@ -295,27 +319,20 @@ const styles = StyleSheet.create({
   // Subtotal Row
   subtotalRow: {
     flexDirection: 'row',
-    backgroundColor: lightPink,
     paddingVertical: 5,
     paddingHorizontal: 4,
     alignItems: 'center',
   },
   subtotalLabel: {
-    width: '55%',
+    width: '65%',
     fontSize: 9,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
     color: '#111111',
     paddingLeft: 4,
   },
-  subtotalBlankPkgQty: {
-    width: '10%',
-  },
-  subtotalBlankRate: {
-    width: '12%',
-  },
   subtotalTaxVal: {
-    width: '11%',
+    width: '17%',
     fontSize: 8.5,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -323,7 +340,7 @@ const styles = StyleSheet.create({
     color: '#111111',
   },
   subtotalAmountVal: {
-    width: '12%',
+    width: '18%',
     fontSize: 9,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -347,7 +364,7 @@ const styles = StyleSheet.create({
     color: '#111111',
   },
 
-  // 6. Bottom Split Section (Bank Details & Terms LEFT | Summary & Total RIGHT)
+  // 6. Bottom Split Section
   bottomSplit: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -369,7 +386,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
-    color: primaryRed,
     marginBottom: 3,
     marginTop: 2,
   },
@@ -413,7 +429,6 @@ const styles = StyleSheet.create({
 
   // Highlighted Total Box
   totalAmountBox: {
-    backgroundColor: lightPink,
     borderWidth: 1,
     borderColor: borderColor,
     borderRadius: 2,
@@ -427,13 +442,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
-    color: primaryRed,
   },
   totalAmountValue: {
     fontSize: 14,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
-    color: primaryRed,
   },
 
   // 7. Authorised Signatory Footer
@@ -459,16 +472,20 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
-    color: '#111111',
     textAlign: 'right',
     marginTop: 1,
   },
 });
 
 /**
- * React PDF Document component formatted with 3 separate columns for ITEM NAME | KW | QTY in the PDF table.
+ * React PDF Document component formatted for G. M. ENTERPRISES quotation.
  */
 export function QuotationPdfDocument({ data = {} }) {
+  const selectedThemeKey = data.theme || 'red';
+  const activeTheme = PDF_THEMES[selectedThemeKey] || PDF_THEMES.red;
+  const primaryColor = activeTheme.primary;
+  const highlightColor = activeTheme.highlight;
+
   const {
     companyName = 'G. M. ENTERPRISES',
     addressSubHeader = 'Main Road Nagbhid, Dist. Chandrapur',
@@ -477,16 +494,16 @@ export function QuotationPdfDocument({ data = {} }) {
     companyPan = 'CBAPD7536B',
     companyEmail = 'goyaldamale@gmail.com',
     companyGstin = '27CBAPD7536B1Z3',
-    safetyTag = 'Safety First...!',
+    logoUrl = defaultLogo,
 
     quotationNo = '24',
     quotationDate = '19/08/2026',
     expiryDate = '30/09/2026',
 
-    customerName = 'Yamaji Ganpat Undirwade',
-    customerAddress = 'Gondwana University,Navegaon Complex ,Gadchiroli',
+    customerName = '',
+    customerAddress = '',
     customerPinCode = '442605',
-    customerMobile = '8329861988',
+    customerMobile = '',
     placeOfSupply = 'Maharashtra',
 
     shipToSameAsBillTo = true,
@@ -505,7 +522,6 @@ export function QuotationPdfDocument({ data = {} }) {
       { name: 'Earthing rod', kw: '', qty: '3' },
     ],
 
-    qtyText = '1 SET',
     rateAmount = '2,94,500',
     taxAmountText = '15,500',
     taxPercentageText = '5%',
@@ -515,6 +531,7 @@ export function QuotationPdfDocument({ data = {} }) {
     sgstText = '7,750',
     cgstRate = '2.5%',
     sgstRate = '2.5%',
+    totalWords: overrideTotalWords,
 
     bankDetails = {
       name: 'G. M. Enterprises',
@@ -535,17 +552,22 @@ export function QuotationPdfDocument({ data = {} }) {
     signatureUrl = defaultSignature,
   } = data;
 
-  const totalWords = numberToWordsIndian(310000);
+  // Auto-calculate words if numeric total exists
+  const numericVal = Number(String(totalAmountText).replace(/,/g, '')) || 310000;
+  const totalWords = overrideTotalWords || numberToWordsIndian(numericVal);
 
   return (
     <Document title={`Quotation_${quotationNo || '24'}`}>
       <Page size="A4" style={styles.page}>
+        {/* Top Heading QUOTATION */}
+        <Text style={[styles.topHeadingTitle, { color: primaryColor }]}>QUOTATION</Text>
+
         {/* 1. Header Section */}
         <View style={styles.topHeaderContainer}>
           <View style={styles.headerLeft}>
-            <Text style={styles.companyTitle}>{companyName}</Text>
+            <Text style={[styles.companyTitle, { color: primaryColor }]}>{companyName}</Text>
             <Text style={styles.addressSubHeader}>{addressSubHeader}</Text>
-            <Text style={styles.specialistTag}>{specialistTag}</Text>
+            <Text style={[styles.specialistTag, { color: primaryColor }]}>{specialistTag}</Text>
             <Text style={styles.companyMetaText}>
               Mobile No.{companyMobile}
             </Text>
@@ -560,16 +582,17 @@ export function QuotationPdfDocument({ data = {} }) {
             </Text>
           </View>
           <View style={styles.headerRight}>
-            <Text style={styles.safetyTag}>{safetyTag}</Text>
+            {/* Replace Safety First with Top Right Logo */}
+            <Image style={styles.topRightLogo} src={logoUrl || defaultLogo} />
           </View>
         </View>
 
-        {/* Double Red Divider Rules */}
-        <View style={styles.thinRedLine} />
-        <View style={styles.thickRedLine} />
+        {/* Double Divider Rules */}
+        <View style={[styles.thinRedLine, { borderBottomColor: primaryColor }]} />
+        <View style={[styles.thickRedLine, { borderBottomColor: primaryColor }]} />
 
-        {/* 2. Red Quotation Meta Banner */}
-        <View style={styles.bannerContainer}>
+        {/* 2. Quotation Meta Banner */}
+        <View style={[styles.bannerContainer, { backgroundColor: primaryColor }]}>
           <Text style={styles.bannerItem}>Quotation No : {quotationNo}</Text>
           <Text style={styles.bannerItem}>Quotation Date : {quotationDate}</Text>
           <Text style={styles.bannerItem}>Expiry Date : {expiryDate}</Text>
@@ -578,7 +601,7 @@ export function QuotationPdfDocument({ data = {} }) {
         {/* 3. BILL TO / SHIP TO */}
         <View style={styles.billShipContainer}>
           <View style={styles.billShipCol}>
-            <Text style={styles.boxHeading}>BILL TO</Text>
+            <Text style={[styles.boxHeading, { color: primaryColor }]}>BILL TO</Text>
             <Text style={styles.infoText}>
               <Text style={styles.boldInline}>Name: </Text>
               {customerName}
@@ -602,7 +625,7 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
 
           <View style={[styles.billShipCol, styles.colDivider]}>
-            <Text style={styles.boxHeading}>SHIP TO</Text>
+            <Text style={[styles.boxHeading, { color: primaryColor }]}>SHIP TO</Text>
             <Text style={styles.infoText}>
               <Text style={styles.boldInline}>Name: </Text>
               {shipToSameAsBillTo ? customerName : shippingName || customerName}
@@ -626,13 +649,12 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
         </View>
 
-        {/* 4. ITEMS Table (3 distinct columns: ITEMS | KW | QTY) */}
+        {/* 4. ITEMS Table (Columns: ITEMS | KW | QTY | RATE | TAX | AMOUNT) */}
         <View style={styles.tableContainer}>
-          <View style={styles.tableHeader}>
+          <View style={[styles.tableHeader, { backgroundColor: primaryColor }]}>
             <Text style={styles.thItems}>ITEMS</Text>
             <Text style={styles.thKw}>KW</Text>
             <Text style={styles.thItemQty}>QTY</Text>
-            <Text style={styles.thPkgQty}>SET QTY.</Text>
             <Text style={styles.thRate}>RATE</Text>
             <Text style={styles.thTax}>TAX</Text>
             <Text style={styles.thAmount}>AMOUNT</Text>
@@ -657,10 +679,7 @@ export function QuotationPdfDocument({ data = {} }) {
               })}
             </View>
 
-            {/* Right Merged Package Columns */}
-            <View style={styles.tdPkgQtyCol}>
-              <Text>{qtyText}</Text>
-            </View>
+            {/* Right Columns */}
             <View style={styles.tdRateCol}>
               <Text>{rateAmount}</Text>
             </View>
@@ -674,10 +693,8 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
 
           {/* Subtotal Row */}
-          <View style={styles.subtotalRow}>
+          <View style={[styles.subtotalRow, { backgroundColor: highlightColor }]}>
             <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
-            <View style={styles.subtotalBlankPkgQty} />
-            <View style={styles.subtotalBlankRate} />
             <Text style={styles.subtotalTaxVal}>{taxAmountText}</Text>
             <Text style={styles.subtotalAmountVal}>{totalAmountText}</Text>
           </View>
@@ -695,7 +712,7 @@ export function QuotationPdfDocument({ data = {} }) {
         <View style={styles.bottomSplit}>
           {/* Left Column: Bank Details & Terms */}
           <View style={styles.bottomLeftCol}>
-            <Text style={styles.sectionHeader}>BANK DETAILS</Text>
+            <Text style={[styles.sectionHeader, { color: primaryColor }]}>BANK DETAILS</Text>
             <Text style={styles.bankText}>
               <Text style={styles.boldInline}>Name: </Text>{bankDetails.name}
             </Text>
@@ -712,7 +729,7 @@ export function QuotationPdfDocument({ data = {} }) {
               <Text style={styles.boldInline}>Branch: </Text>{bankDetails.branch}
             </Text>
 
-            <Text style={[styles.sectionHeader, { marginTop: 8 }]}>TERMS AND CONDITIONS</Text>
+            <Text style={[styles.sectionHeader, { color: primaryColor, marginTop: 8 }]}>TERMS AND CONDITIONS</Text>
             {terms.map((term, tIdx) => (
               <Text key={tIdx} style={styles.termsText}>
                 {tIdx + 1}. {term}
@@ -737,9 +754,9 @@ export function QuotationPdfDocument({ data = {} }) {
               </View>
             </View>
 
-            <View style={styles.totalAmountBox}>
-              <Text style={styles.totalAmountLabel}>Total Amount</Text>
-              <Text style={styles.totalAmountValue}>{totalAmountText} /-</Text>
+            <View style={[styles.totalAmountBox, { backgroundColor: highlightColor }]}>
+              <Text style={[styles.totalAmountLabel, { color: primaryColor }]}>Total Amount</Text>
+              <Text style={[styles.totalAmountValue, { color: primaryColor }]}>{totalAmountText} /-</Text>
             </View>
           </View>
         </View>
@@ -750,7 +767,7 @@ export function QuotationPdfDocument({ data = {} }) {
             <Image style={styles.stampImage} src={signatureUrl} />
           ) : null}
           <Text style={styles.signatoryText}>AUTHORISED SIGNATORY FOR</Text>
-          <Text style={styles.signatoryCompany}>{companyName}</Text>
+          <Text style={[styles.signatoryCompany, { color: primaryColor }]}>{companyName}</Text>
         </View>
       </Page>
     </Document>
