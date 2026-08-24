@@ -111,8 +111,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   topRightLogo: {
-    width: 55,
-    height: 55,
+    width: 75,
+    height: 75,
     objectFit: 'contain',
   },
 
@@ -556,8 +556,12 @@ export function QuotationPdfDocument({ data = {} }) {
   const numericVal = Number(String(totalAmountText).replace(/,/g, '')) || 310000;
   const totalWords = overrideTotalWords || numberToWordsIndian(numericVal);
 
+  const cleanCustomer = (customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const cleanQuotationNo = (quotationNo || 'Draft').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const pdfTitle = `${cleanCustomer}_Quotation_${cleanQuotationNo}`;
+
   return (
-    <Document title={`Quotation_${quotationNo || '24'}`}>
+    <Document title={pdfTitle}>
       <Page size="A4" style={styles.page}>
         {/* Top Heading QUOTATION */}
         <Text style={[styles.topHeadingTitle, { color: primaryColor }]}>QUOTATION</Text>

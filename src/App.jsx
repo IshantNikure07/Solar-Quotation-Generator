@@ -218,7 +218,7 @@ function HomeQuotationPage() {
 
           <PDFDownloadLink
             document={memoizedPdfDocument}
-            fileName={`Quotation_${formData.quotationNo || '24'}.pdf`}
+            fileName={`${(formData.customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_')}_Quotation_${(formData.quotationNo || 'Draft').trim().replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded text-xs font-semibold shadow transition flex items-center gap-1.5"
           >
             {({ loading }) => (loading ? 'Generating PDF...' : 'Download PDF')}
@@ -454,7 +454,7 @@ function HomeQuotationPage() {
                                     <span className="text-xs font-bold text-slate-400 w-5 text-center">{index + 1}.</span>
 
                                     {/* 1. Item Name Selector / Input */}
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 space-y-1">
                                       <select
                                         name={`items.${index}.name`}
                                         value={PRESET_ITEMS.includes(item.name) ? item.name : 'Other / Custom'}
@@ -479,22 +479,21 @@ function HomeQuotationPage() {
                                           </option>
                                         ))}
                                       </select>
-                                      {/* Custom text input if custom item */}
-                                      {(!PRESET_ITEMS.includes(item.name) || item.name === 'Other / Custom') && (
-                                        <input
-                                          type="text"
-                                          placeholder="Type custom item name..."
-                                          name={`items.${index}.name`}
-                                          value={item.name}
-                                          onChange={(e) => {
-                                            const updatedItems = [...values.items];
-                                            updatedItems[index].name = e.target.value;
-                                            setFieldValue('items', updatedItems);
-                                            triggerDebouncedSync({ ...values, items: updatedItems });
-                                          }}
-                                          className="w-full mt-1 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none bg-slate-50"
-                                        />
-                                      )}
+
+                                      {/* Editable Description Text Input for editing selected item */}
+                                      <input
+                                        type="text"
+                                        placeholder="Edit item description text..."
+                                        name={`items.${index}.name`}
+                                        value={item.name}
+                                        onChange={(e) => {
+                                          const updatedItems = [...values.items];
+                                          updatedItems[index].name = e.target.value;
+                                          setFieldValue('items', updatedItems);
+                                          triggerDebouncedSync({ ...values, items: updatedItems });
+                                        }}
+                                        className="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-800 outline-none bg-slate-50 text-slate-700 font-normal"
+                                      />
                                     </div>
 
                                     {/* 2. KW Range (Only for Panels & Inverters) */}
