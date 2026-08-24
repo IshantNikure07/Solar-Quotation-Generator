@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // 2. Quotation Meta Banner
+  // 2. Meta Banner
   bannerContainer: {
     flexDirection: 'row',
     paddingVertical: 5,
@@ -495,13 +495,17 @@ const styles = StyleSheet.create({
 });
 
 /**
- * React PDF Document component supporting Watermark toggle & 6 dynamic color themes.
+ * React PDF Document component supporting Quotation vs Invoice document types, Watermark & 6 dynamic color themes.
  */
 export function QuotationPdfDocument({ data = {} }) {
   const selectedThemeKey = data.theme || 'red';
   const activeTheme = PDF_THEMES[selectedThemeKey] || PDF_THEMES.red;
   const primaryColor = activeTheme.primary;
   const highlightColor = activeTheme.highlight;
+
+  const isInvoice = (data.docType || data.type || 'quotation').toLowerCase() === 'invoice';
+  const mainTitleText = isInvoice ? 'INVOICE' : 'QUOTATION';
+  const docTypeLabel = isInvoice ? 'Invoice' : 'Quotation';
 
   const {
     showWatermark = true,
@@ -561,10 +565,10 @@ export function QuotationPdfDocument({ data = {} }) {
 
     terms = [
       'This invoice shows actual price of goods and all particulars are true and correct.',
-      'Goods once sold will not be taken back.',
-      'All disputes subject to Gadchiroli jurisdiction.',
-      'Warranty Will be applicable as per manufacture terms only.',
-      '5 Year Maintenance Free',
+      'Goods once sold are non-returnable.',
+      'All disputes are subject to the jurisdiction of Gadchiroli.',
+      'Warranty is applicable as per the manufacturer’s terms and conditions.',
+      'Five years of maintenance is provided free of charge.',
     ],
 
     signatureUrl = defaultSignature,
@@ -576,7 +580,7 @@ export function QuotationPdfDocument({ data = {} }) {
 
   const cleanCustomer = (customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
   const cleanQuotationNo = (quotationNo || 'Draft').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-  const pdfTitle = `${cleanCustomer}_Quotation_${cleanQuotationNo}`;
+  const pdfTitle = `${cleanCustomer}_${docTypeLabel}_${cleanQuotationNo}`;
 
   return (
     <Document title={pdfTitle}>
@@ -588,8 +592,8 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
         )}
 
-        {/* Top Heading QUOTATION */}
-        <Text style={[styles.topHeadingTitle, { color: primaryColor }]}>QUOTATION</Text>
+        {/* Top Heading (QUOTATION or INVOICE) */}
+        <Text style={[styles.topHeadingTitle, { color: primaryColor }]}>{mainTitleText}</Text>
 
         {/* 1. Header Section */}
         <View style={styles.topHeaderContainer}>
@@ -619,11 +623,13 @@ export function QuotationPdfDocument({ data = {} }) {
         <View style={[styles.thinRedLine, { borderBottomColor: primaryColor }]} />
         <View style={[styles.thickRedLine, { borderBottomColor: primaryColor }]} />
 
-        {/* 2. Quotation Meta Banner */}
+        {/* 2. Meta Banner (Hides Expiry Date for Invoices) */}
         <View style={[styles.bannerContainer, { backgroundColor: primaryColor }]}>
-          <Text style={styles.bannerItem}>Quotation No : {quotationNo}</Text>
-          <Text style={styles.bannerItem}>Quotation Date : {quotationDate}</Text>
-          <Text style={styles.bannerItem}>Expiry Date : {expiryDate}</Text>
+          <Text style={styles.bannerItem}>{isInvoice ? 'Invoice No' : 'Quotation No'} : {quotationNo}</Text>
+          <Text style={styles.bannerItem}>{isInvoice ? 'Invoice Date' : 'Quotation Date'} : {quotationDate}</Text>
+          {!isInvoice && (
+            <Text style={styles.bannerItem}>Expiry Date : {expiryDate}</Text>
+          )}
         </View>
 
         {/* 3. BILL TO / SHIP TO */}

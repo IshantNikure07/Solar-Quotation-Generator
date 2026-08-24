@@ -65,6 +65,7 @@ const calculateGstBreakdown = (totalStr, gstPct = 5) => {
 
 // Initial Form Values matching reference quotation & default signature.png
 const initialFormValues = {
+  docType: 'quotation', // 'quotation' | 'invoice'
   showWatermark: true,
   theme: 'red',
   companyName: 'G. M. ENTERPRISES',
@@ -121,13 +122,14 @@ const initialFormValues = {
     branch: 'NAGBHID',
   },
 
-  terms: [
-    'This invoice shows actual price of goods and all particulars are true and correct.',
-    'Goods once sold will not be taken back.',
-    'All disputes subject to Gadchiroli jurisdiction.',
-    'Warranty Will be applicable as per manufacture terms only.',
-    '5 Year Maintenance Free',
-  ],
+ 
+    terms : [
+      'This invoice shows actual price of goods and all particulars are true and correct.',
+      'Goods once sold are non-returnable.',
+      'All disputes are subject to the jurisdiction of Gadchiroli.',
+      'Warranty is applicable as per the manufacturer’s terms and conditions.',
+      'Five years of maintenance is provided free of charge.',
+    ],
 
   signatureUrl: defaultSignature,
 };
@@ -135,8 +137,8 @@ const initialFormValues = {
 // Yup validation schema
 const QuotationSchema = Yup.object().shape({
   companyName: Yup.string().required('Company Name is required'),
-  quotationNo: Yup.string().required('Quotation No is required'),
-  quotationDate: Yup.string().required('Quotation Date is required'),
+  quotationNo: Yup.string().required('Document Number is required'),
+  quotationDate: Yup.string().required('Document Date is required'),
   totalAmountText: Yup.string().required('Total Amount is required'),
 });
 
@@ -181,6 +183,11 @@ function HomeQuotationPage() {
     };
   }, []);
 
+  const currentDocLabel = formData.docType === 'invoice' ? 'Invoice' : 'Quotation';
+  const cleanCustomer = (formData.customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const cleanQuotationNo = (formData.quotationNo || 'Draft').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const downloadFileName = `${cleanCustomer}_${currentDocLabel}_${cleanQuotationNo}.pdf`;
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
       {/* Top Header Navbar */}
@@ -189,7 +196,7 @@ function HomeQuotationPage() {
           <img src={logoUni} alt="Logo" className="w-10 h-10 object-contain bg-white rounded-full p-1 shadow" />
           <div>
             <h1 className="text-xl font-bold tracking-wide">G. M. ENTERPRISES</h1>
-            <p className="text-xs text-red-200">Solar Energy Solutions Quotation System</p>
+            <p className="text-xs text-red-200">Solar Energy Solutions Quotation & Invoice System</p>
           </div>
         </div>
         <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -219,10 +226,10 @@ function HomeQuotationPage() {
 
           <PDFDownloadLink
             document={memoizedPdfDocument}
-            fileName={`${(formData.customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_')}_Quotation_${(formData.quotationNo || 'Draft').trim().replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`}
+            fileName={downloadFileName}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded text-xs font-semibold shadow transition flex items-center gap-1.5"
           >
-            {({ loading }) => (loading ? 'Generating PDF...' : 'Download PDF')}
+            {({ loading }) => (loading ? 'Generating PDF...' : `Download ${currentDocLabel} PDF`)}
           </PDFDownloadLink>
         </div>
       </header>
@@ -238,6 +245,8 @@ function HomeQuotationPage() {
           }}
         >
           {({ values, errors, touched, handleChange, setFieldValue }) => {
+            const isInvoice = values.docType === 'invoice';
+
             // Form input change + Auto GST calculation + Smooth debounced PDF update
             const handleFormChange = (e) => {
               handleChange(e);
@@ -271,9 +280,9 @@ function HomeQuotationPage() {
                 <div className={`grid gap-6 ${activeTab === 'split' ? 'lg:grid-cols-12' : 'grid-cols-1'}`}>
                   {/* Form Panel */}
                   {(activeTab === 'split' || activeTab === 'form') && (
-                    <div className={`${activeTab === 'split' ? 'lg:col-span-6' : 'col-span-1'} bg-white p-5 rounded-lg shadow-sm border border-slate-200 space-y-6 max-h-[85vh] overflow-y-auto`}>
+                    <div className={`${activeTab === 'split' ? 'lg:col-span-6' : 'col-span-1'} bg-white p-5 rounded-lg shadow-sm border border-slate-200 space-y-5 max-h-[85vh] overflow-y-auto`}>
                       <div className="border-b pb-2 text-red-900 flex flex-wrap justify-between items-center gap-2">
-                        <h2 className="text-base font-bold text-slate-800">Quotation Generator Form</h2>
+                        <h2 className="text-base font-bold text-slate-800">Quotation / Invoice Form</h2>
                         <div className="flex items-center gap-2 text-xs">
                           {isPendingSync ? (
                             <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold animate-pulse">
@@ -290,6 +299,45 @@ function HomeQuotationPage() {
                             className="bg-red-800 hover:bg-red-900 text-white px-2.5 py-0.5 rounded text-[11px] font-bold shadow-2xs"
                           >
                             Sync Now ⚡
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Tab-like UI for Document Type Selection */}
+                      <div className="bg-red-50/70 p-2.5 rounded-lg border border-red-200 flex flex-wrap justify-between items-center gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-red-900">Select Document Type</span>
+                        <div className="flex items-center bg-white p-1 rounded-md border border-red-300 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFieldValue('docType', 'quotation');
+                              const updated = { ...values, docType: 'quotation' };
+                              setFormData(updated);
+                              setIsPendingSync(false);
+                            }}
+                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
+                              !isInvoice
+                                ? 'bg-red-900 text-white shadow-sm'
+                                : 'text-slate-600 hover:text-red-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span>📄 Quotation</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFieldValue('docType', 'invoice');
+                              const updated = { ...values, docType: 'invoice' };
+                              setFormData(updated);
+                              setIsPendingSync(false);
+                            }}
+                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
+                              isInvoice
+                                ? 'bg-red-900 text-white shadow-sm'
+                                : 'text-slate-600 hover:text-red-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span>🧾 Invoice</span>
                           </button>
                         </div>
                       </div>
@@ -347,10 +395,12 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* Quotation No & Dates */}
-                      <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded border border-slate-200">
+                      {/* Quotation / Invoice Number & Dates */}
+                      <div className={`grid ${isInvoice ? 'grid-cols-2' : 'grid-cols-3'} gap-3 bg-slate-50 p-3 rounded border border-slate-200`}>
                         <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Quotation No</label>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            {isInvoice ? 'Invoice No' : 'Quotation No'}
+                          </label>
                           <input
                             type="text"
                             name="quotationNo"
@@ -363,7 +413,9 @@ function HomeQuotationPage() {
                           )}
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Quotation Date</label>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            {isInvoice ? 'Invoice Date' : 'Quotation Date'}
+                          </label>
                           <input
                             type="text"
                             name="quotationDate"
@@ -372,16 +424,18 @@ function HomeQuotationPage() {
                             className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none"
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Expiry Date</label>
-                          <input
-                            type="text"
-                            name="expiryDate"
-                            value={values.expiryDate}
-                            onChange={handleFormChange}
-                            className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none"
-                          />
-                        </div>
+                        {!isInvoice && (
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Expiry Date</label>
+                            <input
+                              type="text"
+                              name="expiryDate"
+                              value={values.expiryDate}
+                              onChange={handleFormChange}
+                              className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Customer / Billing Details */}
@@ -441,7 +495,7 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* SOLAR ITEMS LIST (3 COLUMNS: Item Name, KW, Quantity) */}
+                      {/* SOLAR ITEMS LIST */}
                       <div className="space-y-3 bg-red-50/40 p-3 rounded border border-red-200">
                         <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
                           <h3 className="text-xs font-bold uppercase tracking-wider text-red-900">Solar Items List</h3>
@@ -494,7 +548,7 @@ function HomeQuotationPage() {
                                         ))}
                                       </select>
 
-                                      {/* Editable Description Text Input for editing selected item */}
+                                      {/* Editable Description Text Input */}
                                       <input
                                         type="text"
                                         placeholder="Edit item description text..."
