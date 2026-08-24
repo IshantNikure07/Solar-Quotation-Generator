@@ -1,8 +1,9 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { numberToWordsIndian } from './numberToWords';
+import defaultSignature from '../assets/signature.png';
 
-// Define styles matching the exact reference quotation image using standard built-in Helvetica font
+// Define styles matching reference quotation image using standard built-in Helvetica font
 const primaryRed = '#800000'; // Dark Red / Maroon matching reference
 const lightPink = '#fce8e6';  // Light pink highlight matching subtotal & total boxes
 const borderColor = '#cccccc';
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
 
-  // 4. ITEMS Table Section
+  // 4. ITEMS Table Section (With 3 separate columns: ITEM NAME | KW | QTY)
   tableContainer: {
     borderWidth: 1,
     borderColor: borderColor,
@@ -148,14 +149,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   thItems: {
-    width: '55%',
+    width: '35%',
     color: '#ffffff',
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
     fontSize: 9,
     paddingLeft: 4,
   },
-  thQty: {
+  thKw: {
+    width: '10%',
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9,
+    textAlign: 'center',
+  },
+  thItemQty: {
+    width: '10%',
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9,
+    textAlign: 'center',
+  },
+  thPkgQty: {
     width: '10%',
     color: '#ffffff',
     fontWeight: 'bold',
@@ -196,20 +213,46 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: borderColor,
   },
-  tdItemsCol: {
+  leftItemsBlock: {
     width: '55%',
-    padding: 6,
     borderRightWidth: 1,
     borderRightColor: borderColor,
   },
-  itemLine: {
-    fontSize: 8.5,
+  itemRowFlex: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 3.5,
+    paddingHorizontal: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  colNameText: {
+    width: '63.6%', // 35 / 55
+    fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
     color: '#111111',
-    marginBottom: 4,
+    paddingLeft: 2,
   },
-  tdQtyCol: {
+  colKwText: {
+    width: '18.2%', // 10 / 55
+    fontSize: 8,
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
+    color: '#111111',
+    textAlign: 'center',
+  },
+  colQtyText: {
+    width: '18.2%', // 10 / 55
+    fontSize: 8,
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
+    color: '#111111',
+    textAlign: 'center',
+  },
+
+  // Right Merged Columns
+  tdPkgQtyCol: {
     width: '10%',
     paddingTop: 40,
     textAlign: 'center',
@@ -265,7 +308,7 @@ const styles = StyleSheet.create({
     color: '#111111',
     paddingLeft: 4,
   },
-  subtotalBlankQty: {
+  subtotalBlankPkgQty: {
     width: '10%',
   },
   subtotalBlankRate: {
@@ -400,8 +443,8 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   stampImage: {
-    width: 80,
-    height: 45,
+    width: 90,
+    height: 50,
     marginBottom: 3,
     objectFit: 'contain',
   },
@@ -423,7 +466,7 @@ const styles = StyleSheet.create({
 });
 
 /**
- * React PDF Document component formatted exactly like the G. M. ENTERPRISES quotation reference image.
+ * React PDF Document component formatted with 3 separate columns for ITEM NAME | KW | QTY in the PDF table.
  */
 export function QuotationPdfDocument({ data = {} }) {
   const {
@@ -453,13 +496,13 @@ export function QuotationPdfDocument({ data = {} }) {
     shippingMobile = '',
 
     items = [
-      { name: 'Waaree Panel Top-Con 575/580 - 9 Panel * 25 Year Warranty' },
-      { name: 'Polycab 5kw Inverter - 1 * 8 Year Warranty' },
-      { name: 'Hot Dip Nut Bolt Structure 5kw - 1 * 10 Year Warranty' },
-      { name: 'ACDB/DCDB Havells -1' },
-      { name: 'DC Cable Polycab' },
-      { name: 'LA -1' },
-      { name: 'Earthing Rod -3' },
+      { name: 'Waree Panel Top-con 575/580', kw: '5 KW', qty: '9' },
+      { name: 'Inverter (POLYCAB)', kw: '5 KW', qty: '1' },
+      { name: 'C-channel nut bolt structure', kw: '', qty: '1' },
+      { name: 'ACDB/DCDB cable', kw: '', qty: '1' },
+      { name: 'DC Cable Polycab', kw: '', qty: '1' },
+      { name: 'Lightning Arester', kw: '', qty: '1' },
+      { name: 'Earthing rod', kw: '', qty: '3' },
     ],
 
     qtyText = '1 SET',
@@ -489,7 +532,7 @@ export function QuotationPdfDocument({ data = {} }) {
       '5 Year Maintenance Free',
     ],
 
-    signatureUrl = '',
+    signatureUrl = defaultSignature,
   } = data;
 
   const totalWords = numberToWordsIndian(310000);
@@ -583,28 +626,39 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
         </View>
 
-        {/* 4. ITEMS Table */}
+        {/* 4. ITEMS Table (3 distinct columns: ITEMS | KW | QTY) */}
         <View style={styles.tableContainer}>
           <View style={styles.tableHeader}>
             <Text style={styles.thItems}>ITEMS</Text>
-            <Text style={styles.thQty}>QTY.</Text>
+            <Text style={styles.thKw}>KW</Text>
+            <Text style={styles.thItemQty}>QTY</Text>
+            <Text style={styles.thPkgQty}>SET QTY.</Text>
             <Text style={styles.thRate}>RATE</Text>
             <Text style={styles.thTax}>TAX</Text>
             <Text style={styles.thAmount}>AMOUNT</Text>
           </View>
 
           <View style={styles.tableBodyRow}>
-            {/* Left Column: Numbered items list */}
-            <View style={styles.tdItemsCol}>
-              {items && items.map((item, idx) => (
-                <Text key={idx} style={styles.itemLine}>
-                  {idx + 1}.   {item.name}
-                </Text>
-              ))}
+            {/* Left 3 Sub-Columns: Item Name | KW | QTY */}
+            <View style={styles.leftItemsBlock}>
+              {items && items.map((item, idx) => {
+                const nameStr = typeof item === 'string' ? item : item.name || '';
+                const kwRaw = typeof item === 'object' && item.kw ? item.kw : '';
+                const kwStr = kwRaw === 'N/A' ? '' : kwRaw;
+                const qtyStr = typeof item === 'object' && item.qty ? item.qty : '';
+
+                return (
+                  <View key={idx} style={styles.itemRowFlex}>
+                    <Text style={styles.colNameText}>{idx + 1}.  {nameStr}</Text>
+                    <Text style={styles.colKwText}>{kwStr}</Text>
+                    <Text style={styles.colQtyText}>{qtyStr}</Text>
+                  </View>
+                );
+              })}
             </View>
 
-            {/* Right Merged Columns */}
-            <View style={styles.tdQtyCol}>
+            {/* Right Merged Package Columns */}
+            <View style={styles.tdPkgQtyCol}>
               <Text>{qtyText}</Text>
             </View>
             <View style={styles.tdRateCol}>
@@ -622,7 +676,7 @@ export function QuotationPdfDocument({ data = {} }) {
           {/* Subtotal Row */}
           <View style={styles.subtotalRow}>
             <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
-            <View style={styles.subtotalBlankQty} />
+            <View style={styles.subtotalBlankPkgQty} />
             <View style={styles.subtotalBlankRate} />
             <Text style={styles.subtotalTaxVal}>{taxAmountText}</Text>
             <Text style={styles.subtotalAmountVal}>{totalAmountText}</Text>

@@ -1,12 +1,44 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { Formik, Form, Field, FieldArray } from 'formik';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Formik, Form, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
 import QuotationPdfDocument from './utils/QuotationPdf';
-import { numberToWordsIndian } from './utils/numberToWords';
+import defaultSignature from './assets/signature.png';
+import logoUni from './assets/logo-uni.png';
 
-// Default initial values based on G. M. ENTERPRISES quotation reference image
+// 10 Requested Preset Items
+const PRESET_ITEMS = [
+  'Waree Panel Top-con 575/580',
+  'Waree Panel Bificial 575/580',
+  'Adani Top-con',
+  'Adani Bificial',
+  'C-channel nut bolt structure',
+  'ACDB/DCDB cable',
+  'Lightning Arester',
+  'Earthing rod',
+  'Inverter (POLYCAB)',
+  'Inverter (HAWELLS)',
+  'Other / Custom',
+];
+
+const KW_OPTIONS = ['3 KW', '4 KW', '5 KW', '6 KW', '7 KW', '8 KW', '10 KW', ''];
+
+// Helper to determine if KW selector applies (Panels and Inverters)
+const isKwApplicable = (itemName = '') => {
+  if (!itemName) return false;
+  const lower = itemName.toLowerCase();
+  return (
+    lower.includes('panel') ||
+    lower.includes('inverter') ||
+    lower.includes('top-con') ||
+    lower.includes('bificial') ||
+    lower.includes('adani') ||
+    lower.includes('waree')
+  );
+};
+
+// Initial Form Values matching reference quotation & default signature.png
 const initialFormValues = {
   companyName: 'G. M. ENTERPRISES',
   addressSubHeader: 'Main Road Nagbhid, Dist. Chandrapur',
@@ -33,14 +65,14 @@ const initialFormValues = {
   shippingPinCode: '',
   shippingMobile: '',
 
+  // 3 Columns: Item Name, KW, Quantity
   items: [
-    { name: 'Waaree Panel Top-Con 575/580 - 9 Panel * 25 Year Warranty' },
-    { name: 'Polycab 5kw Inverter - 1 * 8 Year Warranty' },
-    { name: 'Hot Dip Nut Bolt Structure 5kw - 1 * 10 Year Warranty' },
-    { name: 'ACDB/DCDB Havells -1' },
-    { name: 'DC Cable Polycab' },
-    { name: 'LA -1' },
-    { name: 'Earthing Rod -3' },
+    { name: 'Waree Panel Top-con 575/580', kw: '5 KW', qty: '9' },
+    { name: 'Inverter (POLYCAB)', kw: '5 KW', qty: '1' },
+    { name: 'C-channel nut bolt structure', kw: '', qty: '1' },
+    { name: 'ACDB/DCDB cable', kw: '', qty: '1' },
+    { name: 'Lightning Arester', kw: '', qty: '1' },
+    { name: 'Earthing rod', kw: '', qty: '3' },
   ],
 
   qtyText: '1 SET',
@@ -53,7 +85,6 @@ const initialFormValues = {
   sgstText: '7,750',
   cgstRate: '2.5%',
   sgstRate: '2.5%',
-  currencySymbol: '₹',
 
   bankDetails: {
     name: 'G. M. Enterprises',
@@ -70,14 +101,14 @@ const initialFormValues = {
     'Warranty Will be applicable as per manufacture terms only.',
     '5 Year Maintenance Free',
   ],
+
+  signatureUrl: defaultSignature,
 };
 
 // Yup validation schema
 const QuotationSchema = Yup.object().shape({
   companyName: Yup.string().required('Company Name is required'),
   customerName: Yup.string().required('Customer Name is required'),
-  customerAddress: Yup.string().required('Customer Address is required'),
-  customerMobile: Yup.string().required('Customer Mobile is required'),
   quotationNo: Yup.string().required('Quotation No is required'),
   quotationDate: Yup.string().required('Quotation Date is required'),
   totalAmountText: Yup.string().required('Total Amount is required'),
@@ -89,11 +120,14 @@ function HomeQuotationPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
-      {/* Top Navbar */}
+      {/* Top Header Navbar */}
       <header className="bg-red-900 text-white px-6 py-4 shadow-md flex flex-wrap justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold tracking-wide">G. M. ENTERPRISES</h1>
-          <p className="text-xs text-red-200">Quotation Generator & PDF Export System</p>
+        <div className="flex items-center gap-3">
+          <img src={logoUni} alt="Logo" className="w-10 h-10 object-contain bg-white rounded-full p-1 shadow" />
+          <div>
+            <h1 className="text-xl font-bold tracking-wide">G. M. ENTERPRISES</h1>
+            <p className="text-xs text-red-200">Solar Energy Solutions Quotation System</p>
+          </div>
         </div>
         <div className="flex items-center gap-3 mt-2 sm:mt-0">
           <div className="bg-red-950/60 p-1 rounded border border-red-700/50 flex text-xs">
@@ -109,14 +143,14 @@ function HomeQuotationPage() {
               onClick={() => setActiveTab('form')}
               className={`px-3 py-1 rounded transition ${activeTab === 'form' ? 'bg-red-700 font-bold text-white' : 'text-red-200 hover:text-white'}`}
             >
-              Edit Form
+              Form
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('pdf')}
               className={`px-3 py-1 rounded transition ${activeTab === 'pdf' ? 'bg-red-700 font-bold text-white' : 'text-red-200 hover:text-white'}`}
             >
-              Full PDF
+              PDF View
             </button>
           </div>
 
@@ -125,12 +159,12 @@ function HomeQuotationPage() {
             fileName={`Quotation_${formData.quotationNo || '24'}.pdf`}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded text-xs font-semibold shadow transition flex items-center gap-1.5"
           >
-            {({ loading }) => (loading ? 'Generating PDF...' : ' Download PDF')}
+            {({ loading }) => (loading ? 'Generating PDF...' : 'Download PDF')}
           </PDFDownloadLink>
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Container */}
       <main className="flex-1 p-4 max-w-7xl w-full mx-auto">
         <Formik
           initialValues={initialFormValues}
@@ -154,13 +188,13 @@ function HomeQuotationPage() {
                 <div className={`grid gap-6 ${activeTab === 'split' ? 'lg:grid-cols-12' : 'grid-cols-1'}`}>
                   {/* Form Panel */}
                   {(activeTab === 'split' || activeTab === 'form') && (
-                    <div className={`${activeTab === 'split' ? 'lg:col-span-5' : 'col-span-1'} bg-white p-5 rounded-lg shadow-sm border border-slate-200 space-y-6 max-h-[85vh] overflow-y-auto`}>
+                    <div className={`${activeTab === 'split' ? 'lg:col-span-6' : 'col-span-1'} bg-white p-5 rounded-lg shadow-sm border border-slate-200 space-y-6 max-h-[85vh] overflow-y-auto`}>
                       <h2 className="text-base font-bold text-slate-800 border-b pb-2 text-red-900 flex justify-between items-center">
-                        <span>Quotation Details Form</span>
-                        <span className="text-xs font-normal text-slate-500">Live PDF Sync</span>
+                        <span>Quotation Generator Form</span>
+                        <span className="text-xs font-normal text-slate-500">Live Syncing</span>
                       </h2>
 
-                      {/* Quotation Numbers */}
+                      {/* Quotation No & Dates */}
                       <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded border border-slate-200">
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Quotation No</label>
@@ -176,7 +210,7 @@ function HomeQuotationPage() {
                           )}
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Quotation Date</label>
                           <input
                             type="text"
                             name="quotationDate"
@@ -197,9 +231,9 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* Customer Details */}
+                      {/* Customer / Billing Details */}
                       <div className="space-y-3">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-b pb-1">Customer / Billing Information</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-b pb-1">Customer Details (BILL TO)</h3>
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
                           <input
@@ -222,7 +256,7 @@ function HomeQuotationPage() {
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">PIN Code</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Pin Code</label>
                             <input
                               type="text"
                               name="customerPinCode"
@@ -254,52 +288,151 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* Items Section */}
-                      <div className="space-y-3">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-b pb-1">Solar Items List</h3>
+                      {/* SOLAR ITEMS LIST (3 COLUMNS: Item Name, KW, Quantity) */}
+                      <div className="space-y-3 bg-red-50/40 p-3 rounded border border-red-200">
+                        <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-red-900">Solar Items List</h3>
+                          <span className="text-[11px] text-slate-500 font-medium">3 Cols: Item Name | KW | Qty</span>
+                        </div>
+
+                        {/* Column Header Bar */}
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 uppercase px-1">
+                          <span className="w-5 text-center">#</span>
+                          <span className="flex-1">1. Item Name</span>
+                          <span className="w-24 text-center">2. KW Range</span>
+                          <span className="w-20 text-center">3. Qty</span>
+                          <span className="w-6"></span>
+                        </div>
+
                         <FieldArray name="items">
                           {({ push, remove }) => (
-                            <div className="space-y-2">
-                              {values.items.map((item, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-slate-400 w-4">{index + 1}.</span>
-                                  <input
-                                    type="text"
-                                    name={`items.${index}.name`}
-                                    value={item.name}
-                                    onChange={(e) => {
-                                      handleFormChange(e);
-                                      const updatedItems = [...values.items];
-                                      updatedItems[index].name = e.target.value;
-                                      setFormData((prev) => ({ ...prev, items: updatedItems }));
-                                    }}
-                                    className="flex-1 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      remove(index);
-                                      const updatedItems = values.items.filter((_, i) => i !== index);
-                                      setFormData((prev) => ({ ...prev, items: updatedItems }));
-                                    }}
-                                    className="text-red-600 hover:text-red-800 text-xs px-2 py-1"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
+                            <div className="space-y-2.5">
+                              {values.items.map((item, index) => {
+                                const kwNeeded = isKwApplicable(item.name);
+
+                                return (
+                                  <div key={index} className="flex items-center gap-2 bg-white p-1.5 rounded border border-slate-200 shadow-2xs">
+                                    <span className="text-xs font-bold text-slate-400 w-5 text-center">{index + 1}.</span>
+
+                                    {/* 1. Item Name Selector / Input */}
+                                    <div className="flex-1 min-w-0">
+                                      <select
+                                        name={`items.${index}.name`}
+                                        value={PRESET_ITEMS.includes(item.name) ? item.name : 'Other / Custom'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          const updatedItems = [...values.items];
+                                          updatedItems[index].name = val === 'Other / Custom' ? '' : val;
+                                          // Set default KW if applicable
+                                          if (!isKwApplicable(val)) {
+                                            updatedItems[index].kw = '';
+                                          } else if (!updatedItems[index].kw) {
+                                            updatedItems[index].kw = '5 KW';
+                                          }
+                                          setFieldValue('items', updatedItems);
+                                          setFormData((prev) => ({ ...prev, items: updatedItems }));
+                                        }}
+                                        className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none bg-white font-medium text-slate-800"
+                                      >
+                                        <option value="" disabled>-- Select Solar Item --</option>
+                                        {PRESET_ITEMS.map((preset, pIdx) => (
+                                          <option key={pIdx} value={preset}>
+                                            {pIdx + 1}. {preset}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {/* Custom text input if custom item */}
+                                      {(!PRESET_ITEMS.includes(item.name) || item.name === 'Other / Custom') && (
+                                        <input
+                                          type="text"
+                                          placeholder="Type custom item name..."
+                                          name={`items.${index}.name`}
+                                          value={item.name}
+                                          onChange={(e) => {
+                                            const updatedItems = [...values.items];
+                                            updatedItems[index].name = e.target.value;
+                                            setFieldValue('items', updatedItems);
+                                            setFormData((prev) => ({ ...prev, items: updatedItems }));
+                                          }}
+                                          className="w-full mt-1 px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none bg-slate-50"
+                                        />
+                                      )}
+                                    </div>
+
+                                    {/* 2. KW Range (Only for Panels & Inverters) */}
+                                    <div className="w-24">
+                                      <select
+                                        name={`items.${index}.kw`}
+                                        disabled={!kwNeeded}
+                                        value={kwNeeded ? item.kw || '5 KW' : ''}
+                                        onChange={(e) => {
+                                          const updatedItems = [...values.items];
+                                          updatedItems[index].kw = e.target.value;
+                                          setFieldValue('items', updatedItems);
+                                          setFormData((prev) => ({ ...prev, items: updatedItems }));
+                                        }}
+                                        className={`w-full px-1.5 py-1 text-xs border rounded outline-none font-semibold ${
+                                          kwNeeded
+                                            ? 'bg-white text-red-900 border-red-300 focus:ring-1 focus:ring-red-800'
+                                            : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                                        }`}
+                                      >
+                                        {!kwNeeded && <option value="">(None)</option>}
+                                        {KW_OPTIONS.filter((opt) => opt !== '').map((kwOpt, kIdx) => (
+                                          <option key={kIdx} value={kwOpt}>
+                                            {kwOpt}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+
+                                    {/* 3. Quantity Input */}
+                                    <div className="w-20">
+                                      <input
+                                        type="text"
+                                        placeholder="Qty"
+                                        name={`items.${index}.qty`}
+                                        value={item.qty || ''}
+                                        onChange={(e) => {
+                                          const updatedItems = [...values.items];
+                                          updatedItems[index].qty = e.target.value;
+                                          setFieldValue('items', updatedItems);
+                                          setFormData((prev) => ({ ...prev, items: updatedItems }));
+                                        }}
+                                        className="w-full px-2 py-1 text-xs border rounded text-center font-bold text-slate-800 focus:ring-1 focus:ring-red-800 outline-none"
+                                      />
+                                    </div>
+
+                                    {/* Remove Button */}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        remove(index);
+                                        const updatedItems = values.items.filter((_, i) => i !== index);
+                                        setFormData((prev) => ({ ...prev, items: updatedItems }));
+                                      }}
+                                      className="w-6 text-red-600 hover:text-red-800 font-bold text-sm text-center"
+                                      title="Remove item"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                );
+                              })}
+
                               <button
                                 type="button"
                                 onClick={() => {
-                                  push({ name: '' });
+                                  const newItem = { name: 'Waree Panel Top-con 575/580', kw: '5 KW', qty: '1' };
+                                  push(newItem);
                                   setFormData((prev) => ({
                                     ...prev,
-                                    items: [...prev.items, { name: '' }],
+                                    items: [...prev.items, newItem],
                                   }));
                                 }}
-                                className="mt-1 text-xs font-semibold text-red-800 hover:text-red-900 border border-red-300 rounded px-3 py-1 bg-red-50"
+                                className="mt-2 text-xs font-bold text-red-900 hover:text-red-950 bg-white border border-red-300 rounded px-3 py-1.5 shadow-2xs transition flex items-center gap-1"
                               >
-                                + Add Item Row
+                                + Add Solar Item Row
                               </button>
                             </div>
                           )}
@@ -308,10 +441,10 @@ function HomeQuotationPage() {
 
                       {/* Amount & Financial Breakdown */}
                       <div className="space-y-3 bg-slate-50 p-3 rounded border border-slate-200">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Financial Summary</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Financial Breakdown</h3>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Rate / Taxable</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Rate / Taxable Amount</label>
                             <input
                               type="text"
                               name="taxableAmount"
@@ -367,12 +500,12 @@ function HomeQuotationPage() {
 
                   {/* PDF Live Viewer Panel */}
                   {(activeTab === 'split' || activeTab === 'pdf') && (
-                    <div className={`${activeTab === 'split' ? 'lg:col-span-7' : 'col-span-1'} bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-col h-[85vh]`}>
+                    <div className={`${activeTab === 'split' ? 'lg:col-span-6' : 'col-span-1'} bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-col h-[85vh]`}>
                       <div className="flex justify-between items-center pb-2 mb-2 border-b">
                         <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                           Live PDF Format Preview (@react-pdf/renderer)
                         </span>
-                        <span className="text-[11px] text-slate-500">A4 Standard Printable Layout</span>
+                        <span className="text-[11px] text-slate-500">Includes Default Signature Stamp</span>
                       </div>
                       <div className="flex-1 w-full rounded overflow-hidden border border-slate-300 bg-slate-800">
                         <PDFViewer width="100%" height="100%" className="w-full h-full border-none">
