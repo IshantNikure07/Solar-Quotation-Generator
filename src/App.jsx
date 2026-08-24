@@ -65,6 +65,7 @@ const calculateGstBreakdown = (totalStr, gstPct = 5) => {
 
 // Initial Form Values matching reference quotation & default signature.png
 const initialFormValues = {
+  showWatermark: true,
   theme: 'red',
   companyName: 'G. M. ENTERPRISES',
   addressSubHeader: 'Main Road Nagbhid, Dist. Chandrapur',
@@ -293,13 +294,26 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* PDF Color Theme Picker */}
-                      <div className="bg-slate-50 p-3 rounded border border-slate-200 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-700">PDF Color Theme</span>
-                          <span className="text-[11px] font-semibold text-slate-500">
-                            Selected: {PDF_THEMES[values.theme || 'red']?.name}
-                          </span>
+                      {/* PDF Color Theme & Options */}
+                      <div className="bg-slate-50 p-3 rounded border border-slate-200 space-y-3">
+                        <div className="flex flex-wrap justify-between items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-700">PDF Color Theme & Watermark</span>
+                          <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 bg-white px-2.5 py-1 rounded border border-slate-300 hover:border-slate-400">
+                            <input
+                              type="checkbox"
+                              name="showWatermark"
+                              checked={values.showWatermark !== false}
+                              onChange={(e) => {
+                                const val = e.target.checked;
+                                setFieldValue('showWatermark', val);
+                                const updated = { ...values, showWatermark: val };
+                                setFormData(updated);
+                                setIsPendingSync(false);
+                              }}
+                              className="rounded text-red-900 focus:ring-red-800 accent-red-900 w-3.5 h-3.5"
+                            />
+                            <span>Enable Logo Watermark</span>
+                          </label>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {Object.values(PDF_THEMES).map((th) => {

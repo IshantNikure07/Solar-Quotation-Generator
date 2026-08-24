@@ -57,6 +57,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
 
+  // Background Full Page Watermark
+  watermarkContainer: {
+    position: 'absolute',
+    top: '25%',
+    left: '10%',
+    width: '80%',
+    height: 400,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.08,
+  },
+  watermarkImage: {
+    width: 360,
+    height: 360,
+    objectFit: 'contain',
+  },
+
   // Top Page Heading
   topHeadingTitle: {
     fontSize: 16,
@@ -177,7 +194,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
 
-  // 4. ITEMS Table Section (Columns: ITEMS | KW | QTY | RATE | TAX | AMOUNT)
+  // 4. ITEMS Table Section
   tableContainer: {
     borderWidth: 1,
     borderColor: borderColor,
@@ -248,7 +265,7 @@ const styles = StyleSheet.create({
     borderBottomColor: borderColor,
   },
   leftItemsBlock: {
-    width: '65%', // 43 + 12 + 10 = 65%
+    width: '65%',
     borderRightWidth: 1,
     borderRightColor: borderColor,
   },
@@ -261,7 +278,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f3f4f6',
   },
   colNameText: {
-    width: '66.15%', // 43 / 65
+    width: '66.15%',
     fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -269,7 +286,7 @@ const styles = StyleSheet.create({
     paddingLeft: 2,
   },
   colKwText: {
-    width: '18.46%', // 12 / 65
+    width: '18.46%',
     fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -277,7 +294,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   colQtyText: {
-    width: '15.39%', // 10 / 65
+    width: '15.39%',
     fontSize: 8,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
@@ -478,7 +495,7 @@ const styles = StyleSheet.create({
 });
 
 /**
- * React PDF Document component formatted for G. M. ENTERPRISES quotation.
+ * React PDF Document component supporting Watermark toggle & 6 dynamic color themes.
  */
 export function QuotationPdfDocument({ data = {} }) {
   const selectedThemeKey = data.theme || 'red';
@@ -487,6 +504,7 @@ export function QuotationPdfDocument({ data = {} }) {
   const highlightColor = activeTheme.highlight;
 
   const {
+    showWatermark = true,
     companyName = 'G. M. ENTERPRISES',
     addressSubHeader = 'Main Road Nagbhid, Dist. Chandrapur',
     specialistTag = 'Specialist in : Solar Energy Solutions',
@@ -563,6 +581,13 @@ export function QuotationPdfDocument({ data = {} }) {
   return (
     <Document title={pdfTitle}>
       <Page size="A4" style={styles.page}>
+        {/* Full Page Low Opacity Watermark Logo */}
+        {showWatermark && (
+          <View style={styles.watermarkContainer}>
+            <Image style={styles.watermarkImage} src={logoUrl || defaultLogo} />
+          </View>
+        )}
+
         {/* Top Heading QUOTATION */}
         <Text style={[styles.topHeadingTitle, { color: primaryColor }]}>QUOTATION</Text>
 
@@ -586,7 +611,6 @@ export function QuotationPdfDocument({ data = {} }) {
             </Text>
           </View>
           <View style={styles.headerRight}>
-            {/* Replace Safety First with Top Right Logo */}
             <Image style={styles.topRightLogo} src={logoUrl || defaultLogo} />
           </View>
         </View>
@@ -653,7 +677,7 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
         </View>
 
-        {/* 4. ITEMS Table (Columns: ITEMS | KW | QTY | RATE | TAX | AMOUNT) */}
+        {/* 4. ITEMS Table */}
         <View style={styles.tableContainer}>
           <View style={[styles.tableHeader, { backgroundColor: primaryColor }]}>
             <Text style={styles.thItems}>ITEMS</Text>
