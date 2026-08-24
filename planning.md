@@ -11,8 +11,7 @@ Solutions** that allows the user to:
 4.  Enter a single GST percentage and a single total amount for the
     complete bill.
 5.  Preview the completed quotation in a professional quotation layout.
-6.  Print the quotation or save it as a PDF using the browser print
-    dialog.
+6.  Print the quotation or generate/download a PDF using `@react-pdf/renderer`.
 
 The quotation design should be visually inspired by the uploaded
 reference quotation: professional invoice/quotation style, company
@@ -411,21 +410,22 @@ When printing:
 
 ## Validation
 
-Add basic frontend validation:
+Add frontend form validation using **Formik** and **Yup**:
 
--   Company name is required.
--   Customer name is required.
--   Address is required.
--   Pin code should contain a valid Indian PIN format.
--   Mobile should contain a valid Indian mobile number.
--   At least one item is required.
--   Item name is required.
--   KW is required.
--   Quantity must be greater than 0.
--   GST must be 0 or greater.
--   Amount must be greater than 0.
+-   **Formik**: Form state management, submit handling, and field touch tracking.
+-   **Yup Schema**:
+    -   Company name: required.
+    -   Customer name: required.
+    -   Address: required.
+    -   Pin code: valid Indian PIN format (6 digits).
+    -   Mobile: valid Indian mobile number (10 digits).
+    -   Items: at least one item required.
+    -   Item Name & KW: required for each item.
+    -   Quantity: numeric, > 0.
+    -   GST: numeric, >= 0.
+    -   Total Amount: numeric, > 0.
 
-Show clear validation messages near the relevant fields.
+Show clear inline validation error messages next to relevant input fields using Formik's `errors` and `touched` props.
 
 ------------------------------------------------------------------------
 
@@ -518,24 +518,25 @@ Terms & Conditions
 [ Print Quotation ] [ Save as PDF ]
 ```
 
-------------------------------------------------------------------------
-
 ## Recommended Technical Implementation
 
-Build this as a frontend-only application initially.
+Build this as a frontend-only React application initially.
 
-Suggested stack:
+Tech stack & components:
 
--   React
--   TypeScript
--   Tailwind CSS
--   React Hook Form or controlled React state
--   Browser `window.print()` for PDF generation
--   CSS `@media print` for A4 formatting
+-   **React** (Vite + React)
+-   **React Router DOM**: For seamless page routing and navigation (e.g., Form View (`/`), Preview View (`/preview`), and PDF View (`/pdf`)).
+-   **Tailwind CSS**: For styling the modern responsive web user interface.
+-   **Formik**: For managing form state, dynamic item arrays (`FieldArray`), and submit handling.
+-   **Yup**: For form schema validation rules and error messages.
+-   **@react-pdf/renderer**: For generating and exporting professional PDF documents in React.
+-   **PDF UI Code in `src/utils/`**:
+    -   `src/utils/QuotationPdf.jsx` (or `QuotationPdfDocument.jsx`): PDF layout UI code constructed using `@react-pdf/renderer` primitives (`Document`, `Page`, `View`, `Text`, `Image`, `StyleSheet`).
+    -   `src/utils/numberToWords.js`: Utility helper to convert final total amounts to Indian currency words.
 
 No backend is required for the first version.
 
-Keep all quotation data in frontend state.
+Keep all quotation data in React/Formik state.
 
 ------------------------------------------------------------------------
 
@@ -559,7 +560,10 @@ Keep all quotation data in frontend state.
 -   Responsive on mobile, tablet and desktop.
 -   A4 print layout.
 -   Print quotation.
--   Save as PDF through browser print.
+-   Save as PDF using `@react-pdf/renderer` (PDF UI code created in `src/utils/`).
+-   Form state managed via **Formik** and validated using **Yup**.
+-   Routing handled via **React Router DOM**.
+-   Styled with **Tailwind CSS**.
 -   Amount in Indian Rupees.
 -   Convert total amount into Indian currency words.
 -   Use Indian CGST/SGST split.
