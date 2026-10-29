@@ -371,7 +371,18 @@ function HomeQuotationPage() {
                             type="button"
                             onClick={() => {
                               setFieldValue('docType', 'quotation');
-                              const updated = { ...values, docType: 'quotation' };
+                              const targetTotal = values.totalAmountText === '50,000' ? '3,10,000' : values.totalAmountText;
+                              setFieldValue('totalAmountText', targetTotal);
+                              const computed = calculateGstBreakdown(targetTotal, parseFloat(values.gstPercentage) || 5);
+                              if (computed) {
+                                Object.keys(computed).forEach((k) => setFieldValue(k, computed[k]));
+                              }
+                              const updated = {
+                                ...values,
+                                docType: 'quotation',
+                                totalAmountText: targetTotal,
+                                ...(computed || {}),
+                              };
                               setFormData(updated);
                               setIsPendingSync(false);
                             }}
@@ -387,7 +398,18 @@ function HomeQuotationPage() {
                             type="button"
                             onClick={() => {
                               setFieldValue('docType', 'invoice');
-                              const updated = { ...values, docType: 'invoice' };
+                              const targetTotal = values.totalAmountText === '50,000' ? '3,10,000' : values.totalAmountText;
+                              setFieldValue('totalAmountText', targetTotal);
+                              const computed = calculateGstBreakdown(targetTotal, parseFloat(values.gstPercentage) || 5);
+                              if (computed) {
+                                Object.keys(computed).forEach((k) => setFieldValue(k, computed[k]));
+                              }
+                              const updated = {
+                                ...values,
+                                docType: 'invoice',
+                                totalAmountText: targetTotal,
+                                ...(computed || {}),
+                              };
                               setFormData(updated);
                               setIsPendingSync(false);
                             }}
@@ -403,7 +425,9 @@ function HomeQuotationPage() {
                             type="button"
                             onClick={() => {
                               setFieldValue('docType', 'receipt');
-                              const updated = { ...values, docType: 'receipt' };
+                              const targetTotal = (values.totalAmountText === '3,10,000' || !values.totalAmountText) ? '50,000' : values.totalAmountText;
+                              setFieldValue('totalAmountText', targetTotal);
+                              const updated = { ...values, docType: 'receipt', totalAmountText: targetTotal };
                               setFormData(updated);
                               setIsPendingSync(false);
                             }}

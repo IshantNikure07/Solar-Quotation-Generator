@@ -636,7 +636,7 @@ export function QuotationPdfDocument({ data = {} }) {
     rateAmount = '2,94,500',
     taxAmountText = '15,500',
     taxPercentageText = '5%',
-    totalAmountText = '3,10,000',
+    totalAmountText = isReceipt ? '50,000' : '3,10,000',
     taxableAmount = '2,94,500',
     cgstText = '7,750',
     sgstText = '7,750',
@@ -664,7 +664,7 @@ export function QuotationPdfDocument({ data = {} }) {
   } = data;
 
   // Auto-calculate words if numeric total exists
-  const numericVal = Number(String(totalAmountText).replace(/,/g, '')) || 310000;
+  const numericVal = Number(String(totalAmountText).replace(/,/g, '')) || (isReceipt ? 50000 : 310000);
   const totalWords = overrideTotalWords || numberToWordsIndian(numericVal);
 
   const cleanCustomer = (customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
