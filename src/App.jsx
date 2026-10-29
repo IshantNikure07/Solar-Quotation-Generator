@@ -10,21 +10,23 @@ import { numberToWordsIndian } from './utils/numberToWords';
 
 // 10 Requested Preset Items
 const PRESET_ITEMS = [
-  'Waree Panel Top-con 575/580',
-  'Waree Panel Bificial 575/580',
-  'Adani Top-con',
-  'Adani Bificial',
+  'Waree Panel Top-con 575/580/585',
+  'Waree Panel Bifacial 535/540/550',
+  'Adani Top-con ',
+  'Adani Bifacial 550',
   'C-channel nut bolt structure',
-  'ACDB/DCDB cable',
+  'ACDB/DCDB (HAWELLS/POLYCAB)',
+  'GI Structure (Hot dip)',
   'Lightning Arester',
   'Earthing rod',
   'Inverter (POLYCAB)',
   'Inverter (HAWELLS)',
+  'Inverter (LUMINOUS)',
   'Providing and fixing total 3.4 kw of rooftop solar system with waaree module inverter polycab 5kw , GI structure , Hot deep',
   'Other / Custom',
 ];
 
-const KW_OPTIONS = ['3 KW', '4 KW', '5 KW', '6 KW', '7 KW', '8 KW', '10 KW', ''];
+const KW_OPTIONS = ['3 KW', '3.2 KW', '3.3 KW', '3.4 KW', '3.5 KW', '4 KW', '5 KW', '5.2KW', '6 KW', '7 KW', '8 KW', '10 KW', ''];
 
 // Helper to determine if KW selector applies (Panels and Inverters)
 const isKwApplicable = (itemName = '') => {
@@ -63,6 +65,37 @@ const calculateGstBreakdown = (totalStr, gstPct = 5) => {
   };
 };
 
+// Helper to format a date as DD/MM/YYYY
+const formatDate = (date) => {
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
+// Helper to get today's date formatted as DD/MM/YYYY
+const getFormattedCurrentDate = () => formatDate(new Date());
+
+// Helper to get date after N days formatted as DD/MM/YYYY
+const getDateAfterDays = (days = 30) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return formatDate(d);
+};
+
+// Helper to get quotation number from localStorage with default '24'
+const getSavedQuotationNo = () => {
+  try {
+    const saved = localStorage.getItem('quotationNo');
+    if (saved !== null && saved.trim() !== '') {
+      return saved;
+    }
+  } catch (err) {
+    console.error('Error reading quotationNo from localStorage:', err);
+  }
+  return '24';
+};
+
 // Initial Form Values matching reference quotation & default signature.png
 const initialFormValues = {
   docType: 'quotation', // 'quotation' | 'invoice'
@@ -77,9 +110,9 @@ const initialFormValues = {
   companyGstin: '27CBAPD7536B1Z3',
   logoUrl: logoUni,
 
-  quotationNo: '24',
-  quotationDate: '19/08/2026',
-  expiryDate: '30/09/2026',
+  quotationNo: getSavedQuotationNo(),
+  quotationDate: getFormattedCurrentDate(),
+  expiryDate: getDateAfterDays(30),
 
   customerName: '',
   customerAddress: '',
@@ -143,7 +176,10 @@ const QuotationSchema = Yup.object().shape({
 });
 
 function HomeQuotationPage() {
-  const [formData, setFormData] = useState(initialFormValues);
+  const [formData, setFormData] = useState(() => ({
+    ...initialFormValues,
+    quotationNo: getSavedQuotationNo(),
+  }));
   const [activeTab, setActiveTab] = useState('split'); // 'split' | 'form' | 'pdf'
   const [isPendingSync, setIsPendingSync] = useState(false);
   const pendingValuesRef = useRef(null);
@@ -237,9 +273,19 @@ function HomeQuotationPage() {
       {/* Main Container */}
       <main className="flex-1 p-4 max-w-7xl w-full mx-auto">
         <Formik
-          initialValues={initialFormValues}
+          initialValues={{
+            ...initialFormValues,
+            quotationNo: getSavedQuotationNo(),
+          }}
           validationSchema={QuotationSchema}
           onSubmit={(values) => {
+            if (values.quotationNo) {
+              try {
+                localStorage.setItem('quotationNo', values.quotationNo);
+              } catch (err) {
+                console.error('Error saving quotationNo to localStorage:', err);
+              }
+            }
             setFormData(values);
             setIsPendingSync(false);
           }}
@@ -252,6 +298,15 @@ function HomeQuotationPage() {
               handleChange(e);
               const fieldName = e.target.name;
               const fieldVal = e.target.value;
+
+              // Immediately persist quotationNo to localStorage whenever changed
+              if (fieldName === 'quotationNo') {
+                try {
+                  localStorage.setItem('quotationNo', fieldVal);
+                } catch (err) {
+                  console.error('Error saving quotationNo to localStorage:', err);
+                }
+              }
 
               const updatedValues = {
                 ...values,
@@ -731,7 +786,7 @@ function HomeQuotationPage() {
                     <div className={`${activeTab === 'split' ? 'lg:col-span-6' : 'col-span-1'} bg-white p-3 rounded-lg shadow-sm border border-slate-200 flex flex-col h-[85vh]`}>
                       <div className="flex justify-between items-center pb-2 mb-2 border-b">
                         <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                          Live PDF Format Preview (@react-pdf/renderer)
+                          Live PDF Format Preview
                         </span>
                         <div className="flex items-center gap-2">
                           {isPendingSync && (

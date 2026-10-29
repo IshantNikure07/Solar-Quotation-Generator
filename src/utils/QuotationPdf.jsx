@@ -473,8 +473,8 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   stampImage: {
-    width: 90,
-    height: 50,
+    width: 110,
+    height: 70,
     marginBottom: 3,
     objectFit: 'contain',
   },
@@ -518,9 +518,22 @@ export function QuotationPdfDocument({ data = {} }) {
     companyGstin = '27CBAPD7536B1Z3',
     logoUrl = defaultLogo,
 
-    quotationNo = '24',
-    quotationDate = '19/08/2026',
-    expiryDate = '30/09/2026',
+    quotationNo = (() => {
+      try {
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('quotationNo') : null;
+        if (saved && saved.trim() !== '') return saved;
+      } catch {}
+      return '24';
+    })(),
+    quotationDate = (() => {
+      const d = new Date();
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    })(),
+    expiryDate = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    })(),
 
     customerName = '',
     customerAddress = '',
