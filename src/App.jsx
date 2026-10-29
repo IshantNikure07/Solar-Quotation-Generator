@@ -114,6 +114,9 @@ const initialFormValues = {
   quotationDate: getFormattedCurrentDate(),
   expiryDate: getDateAfterDays(30),
 
+  paymentMode: 'Cash', // 'Cash' | 'Online'
+  receiptNote: 'Payment Received Against Solar Rooftop On-Grid System.',
+
   customerName: '',
   customerAddress: '',
   customerPinCode: '442605',
@@ -219,7 +222,8 @@ function HomeQuotationPage() {
     };
   }, []);
 
-  const currentDocLabel = formData.docType === 'invoice' ? 'Invoice' : 'Quotation';
+  const currentDocLabel =
+    formData.docType === 'invoice' ? 'Invoice' : formData.docType === 'receipt' ? 'Receipt' : 'Quotation';
   const cleanCustomer = (formData.customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
   const cleanQuotationNo = (formData.quotationNo || 'Draft').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
   const downloadFileName = `${cleanCustomer}_${currentDocLabel}_${cleanQuotationNo}.pdf`;
@@ -292,6 +296,7 @@ function HomeQuotationPage() {
         >
           {({ values, errors, touched, handleChange, setFieldValue }) => {
             const isInvoice = values.docType === 'invoice';
+            const isReceipt = values.docType === 'receipt';
 
             // Form input change + Auto GST calculation + Smooth debounced PDF update
             const handleFormChange = (e) => {
@@ -370,8 +375,8 @@ function HomeQuotationPage() {
                               setFormData(updated);
                               setIsPendingSync(false);
                             }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
-                              !isInvoice
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
+                              values.docType === 'quotation'
                                 ? 'bg-red-900 text-white shadow-sm'
                                 : 'text-slate-600 hover:text-red-900 hover:bg-slate-100'
                             }`}
@@ -386,13 +391,29 @@ function HomeQuotationPage() {
                               setFormData(updated);
                               setIsPendingSync(false);
                             }}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
                               isInvoice
                                 ? 'bg-red-900 text-white shadow-sm'
                                 : 'text-slate-600 hover:text-red-900 hover:bg-slate-100'
                             }`}
                           >
                             <span>🧾 Invoice</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFieldValue('docType', 'receipt');
+                              const updated = { ...values, docType: 'receipt' };
+                              setFormData(updated);
+                              setIsPendingSync(false);
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5 ${
+                              isReceipt
+                                ? 'bg-red-900 text-white shadow-sm'
+                                : 'text-slate-600 hover:text-red-900 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span>💳 Receipt</span>
                           </button>
                         </div>
                       </div>
@@ -450,11 +471,11 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* Quotation / Invoice Number & Dates */}
+                      {/* Quotation / Invoice / Receipt Number & Dates */}
                       <div className={`grid ${isInvoice ? 'grid-cols-2' : 'grid-cols-3'} gap-3 bg-slate-50 p-3 rounded border border-slate-200`}>
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1">
-                            {isInvoice ? 'Invoice No' : 'Quotation No'}
+                            {isReceipt ? 'Payment / Receipt No' : isInvoice ? 'Invoice No' : 'Quotation No'}
                           </label>
                           <input
                             type="text"
@@ -469,7 +490,7 @@ function HomeQuotationPage() {
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-slate-600 mb-1">
-                            {isInvoice ? 'Invoice Date' : 'Quotation Date'}
+                            {isReceipt ? 'Payment Date' : isInvoice ? 'Invoice Date' : 'Quotation Date'}
                           </label>
                           <input
                             type="text"
@@ -479,7 +500,20 @@ function HomeQuotationPage() {
                             className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none"
                           />
                         </div>
-                        {!isInvoice && (
+                        {isReceipt ? (
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Payment Mode</label>
+                            <select
+                              name="paymentMode"
+                              value={values.paymentMode || 'Cash'}
+                              onChange={handleFormChange}
+                              className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none bg-white font-semibold text-slate-800"
+                            >
+                              <option value="Cash">Cash</option>
+                              <option value="Online">Online</option>
+                            </select>
+                          </div>
+                        ) : !isInvoice ? (
                           <div>
                             <label className="block text-xs font-semibold text-slate-600 mb-1">Expiry Date</label>
                             <input
@@ -490,14 +524,18 @@ function HomeQuotationPage() {
                               className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none"
                             />
                           </div>
-                        )}
+                        ) : null}
                       </div>
 
                       {/* Customer / Billing Details */}
                       <div className="space-y-3">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-b pb-1">Customer Details (BILL TO)</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 border-b pb-1">
+                          {isReceipt ? 'Payment From (Consumer Details)' : 'Customer Details (BILL TO)'}
+                        </h3>
                         <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            {isReceipt ? 'Consumer Name' : 'Customer Name'}
+                          </label>
                           <input
                             type="text"
                             name="customerName"
@@ -550,234 +588,277 @@ function HomeQuotationPage() {
                         </div>
                       </div>
 
-                      {/* SOLAR ITEMS LIST */}
-                      <div className="space-y-3 bg-red-50/40 p-3 rounded border border-red-200">
-                        <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-red-900">Solar Items List</h3>
-                          <span className="text-[11px] text-slate-500 font-medium">Item Name | KW | Qty</span>
-                        </div>
-
-                        {/* Column Header Bar */}
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 uppercase px-1">
-                          <span className="w-5 text-center">#</span>
-                          <span className="flex-1">1. Item Name</span>
-                          <span className="w-24 text-center">2. KW Range</span>
-                          <span className="w-20 text-center">3. Qty</span>
-                          <span className="w-6"></span>
-                        </div>
-
-                        <FieldArray name="items">
-                          {({ push, remove }) => (
-                            <div className="space-y-2.5">
-                              {values.items.map((item, index) => {
-                                const kwNeeded = isKwApplicable(item.name);
-
-                                return (
-                                  <div key={index} className="flex items-center gap-2 bg-white p-1.5 rounded border border-slate-200 shadow-2xs">
-                                    <span className="text-xs font-bold text-slate-400 w-5 text-center">{index + 1}.</span>
-
-                                    {/* 1. Item Name Selector / Input */}
-                                    <div className="flex-1 min-w-0 space-y-1">
-                                      <select
-                                        name={`items.${index}.name`}
-                                        value={PRESET_ITEMS.includes(item.name) ? item.name : 'Other / Custom'}
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          const updatedItems = [...values.items];
-                                          updatedItems[index].name = val === 'Other / Custom' ? '' : val;
-                                          if (!isKwApplicable(val)) {
-                                            updatedItems[index].kw = '';
-                                          } else if (!updatedItems[index].kw) {
-                                            updatedItems[index].kw = '5 KW';
-                                          }
-                                          setFieldValue('items', updatedItems);
-                                          triggerDebouncedSync({ ...values, items: updatedItems });
-                                        }}
-                                        className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none bg-white font-medium text-slate-800"
-                                      >
-                                        <option value="" disabled>-- Select Solar Item --</option>
-                                        {PRESET_ITEMS.map((preset, pIdx) => (
-                                          <option key={pIdx} value={preset}>
-                                            {pIdx + 1}. {preset}
-                                          </option>
-                                        ))}
-                                      </select>
-
-                                      {/* Editable Description Text Input */}
-                                      <input
-                                        type="text"
-                                        placeholder="Edit item description text..."
-                                        name={`items.${index}.name`}
-                                        value={item.name}
-                                        onChange={(e) => {
-                                          const updatedItems = [...values.items];
-                                          updatedItems[index].name = e.target.value;
-                                          setFieldValue('items', updatedItems);
-                                          triggerDebouncedSync({ ...values, items: updatedItems });
-                                        }}
-                                        className="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-800 outline-none bg-slate-50 text-slate-700 font-normal"
-                                      />
-                                    </div>
-
-                                    {/* 2. KW Range (Only for Panels & Inverters) */}
-                                    <div className="w-24">
-                                      <select
-                                        name={`items.${index}.kw`}
-                                        disabled={!kwNeeded}
-                                        value={kwNeeded ? item.kw || '5 KW' : ''}
-                                        onChange={(e) => {
-                                          const updatedItems = [...values.items];
-                                          updatedItems[index].kw = e.target.value;
-                                          setFieldValue('items', updatedItems);
-                                          triggerDebouncedSync({ ...values, items: updatedItems });
-                                        }}
-                                        className={`w-full px-1.5 py-1 text-xs border rounded outline-none font-semibold ${
-                                          kwNeeded
-                                            ? 'bg-white text-red-900 border-red-300 focus:ring-1 focus:ring-red-800'
-                                            : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                                        }`}
-                                      >
-                                        {!kwNeeded && <option value="">(None)</option>}
-                                        {KW_OPTIONS.filter((opt) => opt !== '').map((kwOpt, kIdx) => (
-                                          <option key={kIdx} value={kwOpt}>
-                                            {kwOpt}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-
-                                    {/* 3. Quantity Input */}
-                                    <div className="w-20">
-                                      <input
-                                        type="text"
-                                        placeholder="Qty"
-                                        name={`items.${index}.qty`}
-                                        value={item.qty || ''}
-                                        onChange={(e) => {
-                                          const updatedItems = [...values.items];
-                                          updatedItems[index].qty = e.target.value;
-                                          setFieldValue('items', updatedItems);
-                                          triggerDebouncedSync({ ...values, items: updatedItems });
-                                        }}
-                                        className="w-full px-2 py-1 text-xs border rounded text-center font-bold text-slate-800 focus:ring-1 focus:ring-red-800 outline-none"
-                                      />
-                                    </div>
-
-                                    {/* Remove Button */}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        remove(index);
-                                        const updatedItems = values.items.filter((_, i) => i !== index);
-                                        triggerDebouncedSync({ ...values, items: updatedItems });
-                                      }}
-                                      className="w-6 text-red-600 hover:text-red-800 font-bold text-sm text-center"
-                                      title="Remove item"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                );
-                              })}
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItem = { name: 'Waree Panel Top-con 575/580', kw: '5 KW', qty: '1' };
-                                  push(newItem);
-                                  triggerDebouncedSync({ ...values, items: [...values.items, newItem] });
-                                }}
-                                className="mt-2 text-xs font-bold text-red-900 hover:text-red-950 bg-white border border-red-300 rounded px-3 py-1.5 shadow-2xs transition flex items-center gap-1"
-                              >
-                                + Add Solar Item Row
-                              </button>
-                            </div>
-                          )}
-                        </FieldArray>
-                      </div>
-
-                      {/* Amount & Financial Breakdown (With Auto GST Calculation) */}
-                      <div className="space-y-3 bg-slate-50 p-3 rounded border border-slate-200">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Financial Breakdown</h3>
-                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            Auto GST Calculation Active
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
+                      {/* Receipt Payment Details & Note Section */}
+                      {isReceipt && (
+                        <div className="space-y-3 bg-red-50/40 p-3.5 rounded border border-red-200">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-red-900 border-b border-red-200 pb-1">
+                            Payment Details & Note
+                          </h3>
                           <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">GST Percentage (%)</label>
-                            <select
-                              name="gstPercentage"
-                              value={values.gstPercentage || '5'}
-                              onChange={handleFormChange}
-                              className="w-full px-2 py-1 text-xs border rounded font-semibold text-red-900 bg-white outline-none"
-                            >
-                              <option value="5">5% GST (2.5% CGST + 2.5% SGST)</option>
-                              <option value="12">12% GST (6% CGST + 6% SGST)</option>
-                              <option value="18">18% GST (9% CGST + 9% SGST)</option>
-                              <option value="28">28% GST (14% CGST + 14% SGST)</option>
-                              <option value="0">0% (Exempted)</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Total Amount (Enter Here)</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">
+                              Total Amount Received
+                            </label>
                             <input
                               type="text"
                               name="totalAmountText"
                               value={values.totalAmountText}
                               onChange={handleFormChange}
-                              className="w-full px-2 py-1 text-xs font-bold text-red-900 border border-red-300 rounded bg-red-50 outline-none"
+                              className="w-full px-3 py-1.5 text-sm font-bold text-red-900 border border-red-300 rounded bg-white outline-none focus:ring-1 focus:ring-red-800"
+                              placeholder="e.g. 50,000"
                             />
+                            <div className="text-[11px] text-slate-600 mt-1">
+                              <span className="font-semibold text-slate-700">In Words: </span>
+                              {numberToWordsIndian(Number(String(values.totalAmountText).replace(/,/g, '')) || 0)}
+                            </div>
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Taxable / Rate Amount (Auto)</label>
-                            <input
-                              type="text"
-                              name="taxableAmount"
-                              value={values.taxableAmount}
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">
+                              Note / Purpose of Payment
+                            </label>
+                            <textarea
+                              rows={2}
+                              name="receiptNote"
+                              value={values.receiptNote || 'Payment Received Against Solar Rooftop On-Grid System.'}
                               onChange={handleFormChange}
-                              className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">Total Tax Amount (Auto)</label>
-                            <input
-                              type="text"
-                              name="taxAmountText"
-                              value={values.taxAmountText}
-                              onChange={handleFormChange}
-                              className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">CGST Amount (Auto)</label>
-                            <input
-                              type="text"
-                              name="cgstText"
-                              value={values.cgstText}
-                              onChange={handleFormChange}
-                              className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-600 mb-1">SGST Amount (Auto)</label>
-                            <input
-                              type="text"
-                              name="sgstText"
-                              value={values.sgstText}
-                              onChange={handleFormChange}
-                              className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
+                              className="w-full px-2 py-1 text-xs border border-red-200 rounded focus:ring-1 focus:ring-red-800 outline-none bg-white"
                             />
                           </div>
                         </div>
-                      </div>
+                      )}
+
+                      {!isReceipt && (
+                        <>
+                          {/* SOLAR ITEMS LIST */}
+                          <div className="space-y-3 bg-red-50/40 p-3 rounded border border-red-200">
+                            <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-red-900">Solar Items List</h3>
+                              <span className="text-[11px] text-slate-500 font-medium">Item Name | KW | Qty</span>
+                            </div>
+
+                            {/* Column Header Bar */}
+                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 uppercase px-1">
+                              <span className="w-5 text-center">#</span>
+                              <span className="flex-1">1. Item Name</span>
+                              <span className="w-24 text-center">2. KW Range</span>
+                              <span className="w-20 text-center">3. Qty</span>
+                              <span className="w-6"></span>
+                            </div>
+
+                            <FieldArray name="items">
+                              {({ push, remove }) => (
+                                <div className="space-y-2.5">
+                                  {values.items.map((item, index) => {
+                                    const kwNeeded = isKwApplicable(item.name);
+
+                                    return (
+                                      <div key={index} className="flex items-center gap-2 bg-white p-1.5 rounded border border-slate-200 shadow-2xs">
+                                        <span className="text-xs font-bold text-slate-400 w-5 text-center">{index + 1}.</span>
+
+                                        {/* 1. Item Name Selector / Input */}
+                                        <div className="flex-1 min-w-0 space-y-1">
+                                          <select
+                                            name={`items.${index}.name`}
+                                            value={PRESET_ITEMS.includes(item.name) ? item.name : 'Other / Custom'}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              const updatedItems = [...values.items];
+                                              updatedItems[index].name = val === 'Other / Custom' ? '' : val;
+                                              if (!isKwApplicable(val)) {
+                                                updatedItems[index].kw = '';
+                                              } else if (!updatedItems[index].kw) {
+                                                updatedItems[index].kw = '5 KW';
+                                              }
+                                              setFieldValue('items', updatedItems);
+                                              triggerDebouncedSync({ ...values, items: updatedItems });
+                                            }}
+                                            className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-red-800 outline-none bg-white font-medium text-slate-800"
+                                          >
+                                            <option value="" disabled>-- Select Solar Item --</option>
+                                            {PRESET_ITEMS.map((preset, pIdx) => (
+                                              <option key={pIdx} value={preset}>
+                                                {pIdx + 1}. {preset}
+                                              </option>
+                                            ))}
+                                          </select>
+
+                                          {/* Editable Description Text Input */}
+                                          <input
+                                            type="text"
+                                            placeholder="Edit item description text..."
+                                            name={`items.${index}.name`}
+                                            value={item.name}
+                                            onChange={(e) => {
+                                              const updatedItems = [...values.items];
+                                              updatedItems[index].name = e.target.value;
+                                              setFieldValue('items', updatedItems);
+                                              triggerDebouncedSync({ ...values, items: updatedItems });
+                                            }}
+                                            className="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-800 outline-none bg-slate-50 text-slate-700 font-normal"
+                                          />
+                                        </div>
+
+                                        {/* 2. KW Range (Only for Panels & Inverters) */}
+                                        <div className="w-24">
+                                          <select
+                                            name={`items.${index}.kw`}
+                                            disabled={!kwNeeded}
+                                            value={kwNeeded ? item.kw || '5 KW' : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...values.items];
+                                              updatedItems[index].kw = e.target.value;
+                                              setFieldValue('items', updatedItems);
+                                              triggerDebouncedSync({ ...values, items: updatedItems });
+                                            }}
+                                            className={`w-full px-1.5 py-1 text-xs border rounded outline-none font-semibold ${
+                                              kwNeeded
+                                                ? 'bg-white text-red-900 border-red-300 focus:ring-1 focus:ring-red-800'
+                                                : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                                            }`}
+                                          >
+                                            {!kwNeeded && <option value="">(None)</option>}
+                                            {KW_OPTIONS.filter((opt) => opt !== '').map((kwOpt, kIdx) => (
+                                              <option key={kIdx} value={kwOpt}>
+                                                {kwOpt}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+
+                                        {/* 3. Quantity Input */}
+                                        <div className="w-20">
+                                          <input
+                                            type="text"
+                                            placeholder="Qty"
+                                            name={`items.${index}.qty`}
+                                            value={item.qty || ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...values.items];
+                                              updatedItems[index].qty = e.target.value;
+                                              setFieldValue('items', updatedItems);
+                                              triggerDebouncedSync({ ...values, items: updatedItems });
+                                            }}
+                                            className="w-full px-2 py-1 text-xs border rounded text-center font-bold text-slate-800 focus:ring-1 focus:ring-red-800 outline-none"
+                                          />
+                                        </div>
+
+                                        {/* Remove Button */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            remove(index);
+                                            const updatedItems = values.items.filter((_, i) => i !== index);
+                                            triggerDebouncedSync({ ...values, items: updatedItems });
+                                          }}
+                                          className="w-6 text-red-600 hover:text-red-800 font-bold text-sm text-center"
+                                          title="Remove item"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newItem = { name: 'Waree Panel Top-con 575/580', kw: '5 KW', qty: '1' };
+                                      push(newItem);
+                                      triggerDebouncedSync({ ...values, items: [...values.items, newItem] });
+                                    }}
+                                    className="mt-2 text-xs font-bold text-red-900 hover:text-red-950 bg-white border border-red-300 rounded px-3 py-1.5 shadow-2xs transition flex items-center gap-1"
+                                  >
+                                    + Add Solar Item Row
+                                  </button>
+                                </div>
+                              )}
+                            </FieldArray>
+                          </div>
+
+                          {/* Amount & Financial Breakdown (With Auto GST Calculation) */}
+                          <div className="space-y-3 bg-slate-50 p-3 rounded border border-slate-200">
+                            <div className="flex justify-between items-center">
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Financial Breakdown</h3>
+                              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                Auto GST Calculation Active
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">GST Percentage (%)</label>
+                                <select
+                                  name="gstPercentage"
+                                  value={values.gstPercentage || '5'}
+                                  onChange={handleFormChange}
+                                  className="w-full px-2 py-1 text-xs border rounded font-semibold text-red-900 bg-white outline-none"
+                                >
+                                  <option value="5">5% GST (2.5% CGST + 2.5% SGST)</option>
+                                  <option value="12">12% GST (6% CGST + 6% SGST)</option>
+                                  <option value="18">18% GST (9% CGST + 9% SGST)</option>
+                                  <option value="28">28% GST (14% CGST + 14% SGST)</option>
+                                  <option value="0">0% (Exempted)</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1">Total Amount (Enter Here)</label>
+                                <input
+                                  type="text"
+                                  name="totalAmountText"
+                                  value={values.totalAmountText}
+                                  onChange={handleFormChange}
+                                  className="w-full px-2 py-1 text-xs font-bold text-red-900 border border-red-300 rounded bg-red-50 outline-none"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Taxable / Rate Amount (Auto)</label>
+                                <input
+                                  type="text"
+                                  name="taxableAmount"
+                                  value={values.taxableAmount}
+                                  onChange={handleFormChange}
+                                  className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Total Tax Amount (Auto)</label>
+                                <input
+                                  type="text"
+                                  name="taxAmountText"
+                                  value={values.taxAmountText}
+                                  onChange={handleFormChange}
+                                  className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">CGST Amount (Auto)</label>
+                                <input
+                                  type="text"
+                                  name="cgstText"
+                                  value={values.cgstText}
+                                  onChange={handleFormChange}
+                                  className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">SGST Amount (Auto)</label>
+                                <input
+                                  type="text"
+                                  name="sgstText"
+                                  value={values.sgstText}
+                                  onChange={handleFormChange}
+                                  className="w-full px-2 py-1 text-xs border rounded outline-none bg-slate-100"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 

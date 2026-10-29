@@ -492,6 +492,77 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 1,
   },
+
+  // Receipt Specific Middle Body Styles
+  receiptBodyContainer: {
+    marginVertical: 12,
+  },
+  receiptCard: {
+    borderWidth: 1,
+    borderColor: borderColor,
+    borderRadius: 3,
+    marginBottom: 10,
+    backgroundColor: '#ffffff',
+  },
+  receiptCardHeader: {
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+  },
+  receiptCardHeaderText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  receiptCardBody: {
+    padding: 10,
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    alignItems: 'center',
+  },
+  receiptFieldLabel: {
+    width: 140,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  receiptFieldValue: {
+    flex: 1,
+    fontSize: 9,
+    color: '#222222',
+  },
+  receiptFieldValueBold: {
+    flex: 1,
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#111111',
+  },
+  receiptNoteBox: {
+    backgroundColor: '#fafafa',
+    borderLeftWidth: 3.5,
+    borderWidth: 1,
+    borderColor: borderColor,
+    padding: 8,
+    borderRadius: 2,
+    marginTop: 4,
+  },
+  receiptNoteLabel: {
+    fontSize: 8.5,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 3,
+  },
+  receiptNoteContent: {
+    fontSize: 9,
+    color: '#222222',
+    lineHeight: 1.3,
+  },
 });
 
 /**
@@ -503,9 +574,11 @@ export function QuotationPdfDocument({ data = {} }) {
   const primaryColor = activeTheme.primary;
   const highlightColor = activeTheme.highlight;
 
-  const isInvoice = (data.docType || data.type || 'quotation').toLowerCase() === 'invoice';
-  const mainTitleText = isInvoice ? 'INVOICE' : 'QUOTATION';
-  const docTypeLabel = isInvoice ? 'Invoice' : 'Quotation';
+  const docTypeLower = (data.docType || data.type || 'quotation').toLowerCase();
+  const isInvoice = docTypeLower === 'invoice';
+  const isReceipt = docTypeLower === 'receipt';
+  const mainTitleText = isReceipt ? 'RECEIPT' : isInvoice ? 'INVOICE' : 'QUOTATION';
+  const docTypeLabel = isReceipt ? 'Receipt' : isInvoice ? 'Invoice' : 'Quotation';
 
   const {
     showWatermark = true,
@@ -534,6 +607,9 @@ export function QuotationPdfDocument({ data = {} }) {
       d.setDate(d.getDate() + 30);
       return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     })(),
+
+    paymentMode = 'Cash',
+    receiptNote = 'Payment Received Against Solar Rooftop On-Grid System.',
 
     customerName = '',
     customerAddress = '',
@@ -605,7 +681,7 @@ export function QuotationPdfDocument({ data = {} }) {
           </View>
         )}
 
-        {/* Top Heading (QUOTATION or INVOICE) */}
+        {/* Top Heading (QUOTATION, INVOICE, or RECEIPT) */}
         <Text style={[styles.topHeadingTitle, { color: primaryColor }]}>{mainTitleText}</Text>
 
         {/* 1. Header Section */}
@@ -636,116 +712,182 @@ export function QuotationPdfDocument({ data = {} }) {
         <View style={[styles.thinRedLine, { borderBottomColor: primaryColor }]} />
         <View style={[styles.thickRedLine, { borderBottomColor: primaryColor }]} />
 
-        {/* 2. Meta Banner (Hides Expiry Date for Invoices) */}
+        {/* 2. Meta Banner */}
         <View style={[styles.bannerContainer, { backgroundColor: primaryColor }]}>
-          <Text style={styles.bannerItem}>{isInvoice ? 'Invoice No' : 'Quotation No'} : {quotationNo}</Text>
-          <Text style={styles.bannerItem}>{isInvoice ? 'Invoice Date' : 'Quotation Date'} : {quotationDate}</Text>
-          {!isInvoice && (
-            <Text style={styles.bannerItem}>Expiry Date : {expiryDate}</Text>
+          {isReceipt ? (
+            <>
+              <Text style={styles.bannerItem}>Payment No : {quotationNo}</Text>
+              <Text style={styles.bannerItem}>Payment Date : {quotationDate}</Text>
+              <Text style={styles.bannerItem}>Payment Mode : {paymentMode || 'Cash'}</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.bannerItem}>{isInvoice ? 'Invoice No' : 'Quotation No'} : {quotationNo}</Text>
+              <Text style={styles.bannerItem}>{isInvoice ? 'Invoice Date' : 'Quotation Date'} : {quotationDate}</Text>
+              {!isInvoice && (
+                <Text style={styles.bannerItem}>Expiry Date : {expiryDate}</Text>
+              )}
+            </>
           )}
         </View>
 
-        {/* 3. BILL TO / SHIP TO */}
-        <View style={styles.billShipContainer}>
-          <View style={styles.billShipCol}>
-            <Text style={[styles.boxHeading, { color: primaryColor }]}>BILL TO</Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Name: </Text>
-              {customerName}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Address: </Text>
-              {customerAddress}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Pin Code: </Text>
-              {customerPinCode}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Mobile: </Text>
-              {customerMobile}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Place of Supply: </Text>
-              {placeOfSupply}
-            </Text>
-          </View>
-
-          <View style={[styles.billShipCol, styles.colDivider]}>
-            <Text style={[styles.boxHeading, { color: primaryColor }]}>SHIP TO</Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Name: </Text>
-              {shipToSameAsBillTo ? customerName : shippingName || customerName}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Address: </Text>
-              {shipToSameAsBillTo ? customerAddress : shippingAddress || customerAddress}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Pin Code: </Text>
-              {shipToSameAsBillTo ? customerPinCode : shippingPinCode || customerPinCode}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Mobile: </Text>
-              {shipToSameAsBillTo ? customerMobile : shippingMobile || customerMobile}
-            </Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.boldInline}>Place of Supply: </Text>
-              {placeOfSupply}
-            </Text>
-          </View>
-        </View>
-
-        {/* 4. ITEMS Table */}
-        <View style={styles.tableContainer}>
-          <View style={[styles.tableHeader, { backgroundColor: primaryColor }]}>
-            <Text style={styles.thItems}>ITEMS</Text>
-            <Text style={styles.thKw}>KW</Text>
-            <Text style={styles.thItemQty}>QTY</Text>
-            <Text style={styles.thRate}>RATE</Text>
-            <Text style={styles.thTax}>TAX</Text>
-            <Text style={styles.thAmount}>AMOUNT</Text>
-          </View>
-
-          <View style={styles.tableBodyRow}>
-            {/* Left 3 Sub-Columns: Item Name | KW | QTY */}
-            <View style={styles.leftItemsBlock}>
-              {items && items.map((item, idx) => {
-                const nameStr = typeof item === 'string' ? item : item.name || '';
-                const kwRaw = typeof item === 'object' && item.kw ? item.kw : '';
-                const kwStr = kwRaw === 'N/A' ? '' : kwRaw;
-                const qtyStr = typeof item === 'object' && item.qty ? item.qty : '';
-
-                return (
-                  <View key={idx} style={styles.itemRowFlex}>
-                    <Text style={styles.colNameText}>{idx + 1}.  {nameStr}</Text>
-                    <Text style={styles.colKwText}>{kwStr}</Text>
-                    <Text style={styles.colQtyText}>{qtyStr}</Text>
+        {/* 3 & 4. Middle Body Section */}
+        {isReceipt ? (
+          /* Receipt Middle Body */
+          <View style={styles.receiptBodyContainer}>
+            {/* Consumer / Payment From Card */}
+            <View style={styles.receiptCard}>
+              <View style={[styles.receiptCardHeader, { backgroundColor: primaryColor }]}>
+                <Text style={styles.receiptCardHeaderText}>PAYMENT RECEIVED FROM</Text>
+              </View>
+              <View style={styles.receiptCardBody}>
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptFieldLabel}>Consumer Name :</Text>
+                  <Text style={styles.receiptFieldValueBold}>{customerName || '—'}</Text>
+                </View>
+                {customerMobile ? (
+                  <View style={styles.receiptRow}>
+                    <Text style={styles.receiptFieldLabel}>Mobile Number :</Text>
+                    <Text style={styles.receiptFieldValue}>{customerMobile}</Text>
                   </View>
-                );
-              })}
+                ) : null}
+                {customerAddress ? (
+                  <View style={styles.receiptRow}>
+                    <Text style={styles.receiptFieldLabel}>Address :</Text>
+                    <Text style={styles.receiptFieldValue}>
+                      {customerAddress} {customerPinCode ? `- ${customerPinCode}` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+                {/* <View style={styles.receiptRow}>
+                  <Text style={styles.receiptFieldLabel}>Payment Details :</Text>
+                  <Text style={styles.receiptFieldValue}>Payment #{quotationNo}</Text>
+                </View> */}
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptFieldLabel}>Payment Date :</Text>
+                  <Text style={styles.receiptFieldValue}>{quotationDate}</Text>
+                </View>
+                <View style={styles.receiptRow}>
+                  <Text style={styles.receiptFieldLabel}>Payment Mode :</Text>
+                  <Text style={styles.receiptFieldValue}>{paymentMode || 'Cash'}</Text>
+                </View>
+              </View>
             </View>
 
-            {/* Right Columns */}
-            <View style={styles.tdRateCol}>
-              <Text>{rateAmount}</Text>
-            </View>
-            <View style={styles.tdTaxCol}>
-              <Text>{taxAmountText}</Text>
-              <Text style={{ fontSize: 8, marginTop: 2 }}>{taxPercentageText}</Text>
-            </View>
-            <View style={styles.tdAmountCol}>
-              <Text>{totalAmountText}</Text>
+            {/* Note Box */}
+            <View style={[styles.receiptNoteBox, { borderLeftColor: primaryColor }]}>
+              <Text style={styles.receiptNoteLabel}>NOTE :</Text>
+              <Text style={styles.receiptNoteContent}>
+                {receiptNote || 'Payment Received Against Solar Rooftop On-Grid System.'}
+              </Text>
             </View>
           </View>
+        ) : (
+          /* Quotation / Invoice Standard Middle Body */
+          <>
+            {/* BILL TO / SHIP TO */}
+            <View style={styles.billShipContainer}>
+              <View style={styles.billShipCol}>
+                <Text style={[styles.boxHeading, { color: primaryColor }]}>BILL TO</Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Name: </Text>
+                  {customerName}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Address: </Text>
+                  {customerAddress}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Pin Code: </Text>
+                  {customerPinCode}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Mobile: </Text>
+                  {customerMobile}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Place of Supply: </Text>
+                  {placeOfSupply}
+                </Text>
+              </View>
 
-          {/* Subtotal Row */}
-          <View style={[styles.subtotalRow, { backgroundColor: highlightColor }]}>
-            <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
-            <Text style={styles.subtotalTaxVal}>{taxAmountText}</Text>
-            <Text style={styles.subtotalAmountVal}>{totalAmountText}</Text>
-          </View>
-        </View>
+              <View style={[styles.billShipCol, styles.colDivider]}>
+                <Text style={[styles.boxHeading, { color: primaryColor }]}>SHIP TO</Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Name: </Text>
+                  {shipToSameAsBillTo ? customerName : shippingName || customerName}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Address: </Text>
+                  {shipToSameAsBillTo ? customerAddress : shippingAddress || customerAddress}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Pin Code: </Text>
+                  {shipToSameAsBillTo ? customerPinCode : shippingPinCode || customerPinCode}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Mobile: </Text>
+                  {shipToSameAsBillTo ? customerMobile : shippingMobile || customerMobile}
+                </Text>
+                <Text style={styles.infoText}>
+                  <Text style={styles.boldInline}>Place of Supply: </Text>
+                  {placeOfSupply}
+                </Text>
+              </View>
+            </View>
+
+            {/* ITEMS Table */}
+            <View style={styles.tableContainer}>
+              <View style={[styles.tableHeader, { backgroundColor: primaryColor }]}>
+                <Text style={styles.thItems}>ITEMS</Text>
+                <Text style={styles.thKw}>KW</Text>
+                <Text style={styles.thItemQty}>QTY</Text>
+                <Text style={styles.thRate}>RATE</Text>
+                <Text style={styles.thTax}>TAX</Text>
+                <Text style={styles.thAmount}>AMOUNT</Text>
+              </View>
+
+              <View style={styles.tableBodyRow}>
+                {/* Left 3 Sub-Columns: Item Name | KW | QTY */}
+                <View style={styles.leftItemsBlock}>
+                  {items && items.map((item, idx) => {
+                    const nameStr = typeof item === 'string' ? item : item.name || '';
+                    const kwRaw = typeof item === 'object' && item.kw ? item.kw : '';
+                    const kwStr = kwRaw === 'N/A' ? '' : kwRaw;
+                    const qtyStr = typeof item === 'object' && item.qty ? item.qty : '';
+
+                    return (
+                      <View key={idx} style={styles.itemRowFlex}>
+                        <Text style={styles.colNameText}>{idx + 1}.  {nameStr}</Text>
+                        <Text style={styles.colKwText}>{kwStr}</Text>
+                        <Text style={styles.colQtyText}>{qtyStr}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                {/* Right Columns */}
+                <View style={styles.tdRateCol}>
+                  <Text>{rateAmount}</Text>
+                </View>
+                <View style={styles.tdTaxCol}>
+                  <Text>{taxAmountText}</Text>
+                  <Text style={{ fontSize: 8, marginTop: 2 }}>{taxPercentageText}</Text>
+                </View>
+                <View style={styles.tdAmountCol}>
+                  <Text>{totalAmountText}</Text>
+                </View>
+              </View>
+
+              {/* Subtotal Row */}
+              <View style={[styles.subtotalRow, { backgroundColor: highlightColor }]}>
+                <Text style={styles.subtotalLabel}>SUBTOTAL</Text>
+                <Text style={styles.subtotalTaxVal}>{taxAmountText}</Text>
+                <Text style={styles.subtotalAmountVal}>{totalAmountText}</Text>
+              </View>
+            </View>
+          </>
+        )}
 
         {/* 5. Total Amount (in words) Bar */}
         <View style={styles.wordsContainer}>
@@ -755,7 +897,7 @@ export function QuotationPdfDocument({ data = {} }) {
           </Text>
         </View>
 
-        {/* 6. Bottom Split Section */}
+        {/* 6. Bottom Split Section (Same layout as Invoice) */}
         <View style={styles.bottomSplit}>
           {/* Left Column: Bank Details & Terms */}
           <View style={styles.bottomLeftCol}>
@@ -776,33 +918,41 @@ export function QuotationPdfDocument({ data = {} }) {
               <Text style={styles.boldInline}>Branch: </Text>{bankDetails.branch}
             </Text>
 
-            <Text style={[styles.sectionHeader, { color: primaryColor, marginTop: 8 }]}>TERMS AND CONDITIONS</Text>
-            {terms.map((term, tIdx) => (
-              <Text key={tIdx} style={styles.termsText}>
-                {tIdx + 1}. {term}
-              </Text>
-            ))}
+            {!isReceipt && (
+              <>
+                <Text style={[styles.sectionHeader, { color: primaryColor, marginTop: 8 }]}>TERMS AND CONDITIONS</Text>
+                {terms.map((term, tIdx) => (
+                  <Text key={tIdx} style={styles.termsText}>
+                    {tIdx + 1}. {term}
+                  </Text>
+                ))}
+              </>
+            )}
           </View>
 
           {/* Right Column: Tax Summary & Total Amount Box */}
           <View style={styles.bottomRightCol}>
-            <View style={styles.summaryTable}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Taxable Amount</Text>
-                <Text style={styles.summaryValue}>{taxableAmount}</Text>
+            {!isReceipt && (
+              <View style={styles.summaryTable}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Taxable Amount</Text>
+                  <Text style={styles.summaryValue}>{taxableAmount}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>CGST @ {cgstRate}</Text>
+                  <Text style={styles.summaryValue}>{cgstText}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>SGST @ {sgstRate}</Text>
+                  <Text style={styles.summaryValue}>{sgstText}</Text>
+                </View>
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>CGST @ {cgstRate}</Text>
-                <Text style={styles.summaryValue}>{cgstText}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>SGST @ {sgstRate}</Text>
-                <Text style={styles.summaryValue}>{sgstText}</Text>
-              </View>
-            </View>
+            )}
 
-            <View style={[styles.totalAmountBox, { backgroundColor: highlightColor }]}>
-              <Text style={[styles.totalAmountLabel, { color: primaryColor }]}>Total Amount</Text>
+            <View style={[styles.totalAmountBox, { backgroundColor: highlightColor, marginTop: isReceipt ? 12 : 0 }]}>
+              <Text style={[styles.totalAmountLabel, { color: primaryColor }]}>
+                {isReceipt ? 'Total Received' : 'Total Amount'}
+              </Text>
               <Text style={[styles.totalAmountValue, { color: primaryColor }]}>{totalAmountText} /-</Text>
             </View>
           </View>
